@@ -23,6 +23,19 @@ export const Colors = {
   // Resultado positivo
   profit: '#27866E',
 
+  // Panel de ganancias
+  dashboard: {
+    hero: '#438FE8',
+    heroLight: '#5BB6E8',
+    heroOverlay: 'rgba(255, 255, 255, 0.16)',
+    chartBar: '#C6E6F7',
+    chartBarActive: '#378CC4',
+    successBackground: '#E5F7EE',
+    infoBackground: '#EAF6FD',
+    investmentBorder: '#C9E4F5',
+    investmentTrack: '#B6E2F5',
+  },
+
   // Estados de proyecto (fondo / texto)
   estados: {
     evaluacion: { bg: '#EDE9FE', text: '#6D55A1' },

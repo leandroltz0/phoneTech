@@ -34,6 +34,10 @@ export const CustomBottomNavBar = ({
   const isProyectosActive = currentRouteName === 'proyectos';
   const isGananciasActive = currentRouteName === 'ganancias';
 
+  if (currentRouteName === 'crear-proyecto') {
+    return null;
+  }
+
   const bottomPadding =
     Platform.OS === 'ios'
       ? Math.max(insets.bottom, 16)

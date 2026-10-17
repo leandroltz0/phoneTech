@@ -43,4 +43,18 @@ export const Colors = {
     venta: { bg: '#DFF1FC', text: '#246B96' },
     vendido: { bg: '#DDF5E9', text: '#237653' },
   },
+
+  // Flujo de creación de proyecto
+  proyectoNuevo: {
+    background: '#E8EBFF',
+    title: '#10264C',
+    muted: '#97A4BF',
+    action: '#4B87F7',
+    actionLight: '#5B96F8',
+    artwork: '#FCFCFF',
+    artworkBlue: '#DBEDFC',
+    deviceScreen: '#E6F3FD',
+    buttonDisabled: '#D9E2F0',
+    buttonDisabledText: '#96ADD0',
+  },
 } as const;

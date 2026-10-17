@@ -4,8 +4,8 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
 import { proyectosMock } from '@/data/proyectosMock';
 import { ProyectoCard } from '@/components/proyectos/ProyectoCard';
@@ -31,7 +31,7 @@ export default function ProyectosScreen() {
   }, [busqueda, filtro]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <FlatList
         data={proyectosFiltrados}
         keyExtractor={(item) => item.id}

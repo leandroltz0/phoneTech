@@ -43,7 +43,7 @@ export default function CrearProyectoScreen() {
           <TouchableOpacity
             accessibilityRole="button"
             activeOpacity={0.86}
-            onPress={() => router.push('../seleccionar-dispositivo')}
+            onPress={() => router.push('/seleccionar-dispositivo')}
             style={styles.selectButton}
           >
             <Ionicons name="add" size={19} color={Colors.surface} />
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     height: 198,
     justifyContent: 'center',
     marginBottom: 29,
-    shadowColor: '#536FA7',
+    shadowColor: Colors.proyectoNuevo.artworkShadow,
     shadowOffset: { width: 0, height: 18 },
     shadowOpacity: 0.12,
     shadowRadius: 26,

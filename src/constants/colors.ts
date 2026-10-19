@@ -23,6 +23,20 @@ export const Colors = {
   // Resultado positivo
   profit: '#27866E',
 
+  // Pantalla de análisis del equipo
+  analisis: {
+    title: '#071B49',
+    softBlue: '#E9F4FF',
+    softBlueStrong: '#D7ECFF',
+    ringTrack: '#DBEAFE',
+    success: '#0DAA77',
+    successSoft: '#DDF8F0',
+    warning: '#F6A400',
+    warningSoft: '#FFF4D8',
+    divider: '#D7E5F8',
+    shadow: '#284E8F',
+  },
+
   // Panel de ganancias
   dashboard: {
     hero: '#438FE8',

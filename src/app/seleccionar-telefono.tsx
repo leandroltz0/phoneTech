@@ -282,7 +282,10 @@ export default function SeleccionarTelefonoScreen() {
           accessibilityRole="button"
           activeOpacity={0.88}
           onPress={() => {
-            // El siguiente paso conducirá a la calculadora de costos / rentabilidad
+            router.push({
+              pathname: '/analisis-equipo',
+              params: { dispositivoId: dispositivo.id },
+            });
           }}
           style={styles.continueButton}
         >

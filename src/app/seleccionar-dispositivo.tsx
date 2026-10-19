@@ -120,7 +120,12 @@ export default function SeleccionarDispositivoScreen() {
           activeOpacity={selectedDevice ? 0.85 : 1}
           disabled={!selectedDevice}
           onPress={() => {
-            // El modelo seleccionado se usará para comenzar el diagnóstico en el siguiente paso.
+            if (selectedDevice) {
+              router.push({
+                pathname: '/seleccionar-telefono',
+                params: { dispositivoId: selectedDevice.id },
+              });
+            }
           }}
           style={[styles.useButton, selectedDevice && styles.useButtonEnabled]}
         >

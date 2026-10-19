@@ -25,6 +25,10 @@ export default function RootLayout() {
           name="seleccionar-dispositivo"
           options={{ headerShown: false, animation: 'slide_from_right' }}
         />
+        <Stack.Screen
+          name="seleccionar-telefono"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
+        />
       </Stack>
     </PaperProvider>
   );

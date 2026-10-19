@@ -21,15 +21,11 @@ type BottomTabBarProps = Parameters<
  */
 export const CustomBottomNavBar = ({
   state,
-  navigateToTab,
+  navigation,
   insets,
 }: BottomTabBarProps) => {
   const currentRoute = state.routes[state.index];
   const currentRouteName = currentRoute?.name;
-
-  const proyectosRoute = state.routes.find((r) => r.name === 'proyectos');
-  const crearRoute = state.routes.find((r) => r.name === 'crear-proyecto');
-  const gananciasRoute = state.routes.find((r) => r.name === 'ganancias');
 
   const isProyectosActive = currentRouteName === 'proyectos';
   const isGananciasActive = currentRouteName === 'ganancias';
@@ -50,9 +46,7 @@ export const CustomBottomNavBar = ({
         <View style={styles.tabSlot}>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() =>
-              proyectosRoute && navigateToTab(proyectosRoute.key)
-            }
+            onPress={() => navigation.navigate('proyectos')}
             style={[
               styles.tabItem,
               isProyectosActive && styles.tabItemActive,
@@ -78,9 +72,7 @@ export const CustomBottomNavBar = ({
         <View style={styles.centerSlot}>
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() =>
-              crearRoute && navigateToTab(crearRoute.key)
-            }
+            onPress={() => navigation.navigate('crear-proyecto')}
             style={styles.addButton}
           >
             <Ionicons name="add" size={28} color={Colors.surface} />
@@ -91,9 +83,7 @@ export const CustomBottomNavBar = ({
         <View style={styles.tabSlot}>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() =>
-              gananciasRoute && navigateToTab(gananciasRoute.key)
-            }
+            onPress={() => navigation.navigate('ganancias')}
             style={[
               styles.tabItem,
               isGananciasActive && styles.tabItemActive,

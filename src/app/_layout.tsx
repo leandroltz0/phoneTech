@@ -33,6 +33,10 @@ export default function RootLayout() {
           name="analisis-equipo"
           options={{ headerShown: false, animation: 'slide_from_right' }}
         />
+        <Stack.Screen
+          name="guardar-proyecto"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
+        />
       </Stack>
     </PaperProvider>
   );

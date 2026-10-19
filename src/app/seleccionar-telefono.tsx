@@ -11,6 +11,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
+import {
+  DeviceVariantSheet,
+  VarianteDispositivoMock,
+} from '@/components/dispositivos/DeviceVariantSheet';
 import { dispositivosMock } from '@/data/dispositivosMock';
 
 // ─── Categorías de fallas (3 filas de 3 columnas exactas al diseño) ─────────
@@ -29,69 +33,33 @@ const CATEGORIAS_FALLAS = [
 
 // ─── Variantes y estimaciones de reventa mock ────────────────────────────────
 
-const VARIANTES_MOCK: Record<
-  string,
-  { codigo: string; ram: string; almacenamiento: string; precio: number }
-> = {
-  'samsung-a03': {
-    codigo: 'SM–A035M',
-    ram: '4 GB RAM',
-    almacenamiento: '64 GB almacenamiento',
-    precio: 120000,
-  },
-  'samsung-a10': {
-    codigo: 'SM–A105M',
-    ram: '2 GB RAM',
-    almacenamiento: '32 GB almacenamiento',
-    precio: 95000,
-  },
-  'samsung-a14': {
-    codigo: 'SM–A145M',
-    ram: '4 GB RAM',
-    almacenamiento: '128 GB almacenamiento',
-    precio: 180000,
-  },
-  'moto-e13': {
-    codigo: 'XT2345–5',
-    ram: '2 GB RAM',
-    almacenamiento: '64 GB almacenamiento',
-    precio: 105000,
-  },
-  'samsung-a04': {
-    codigo: 'SM–A045M',
-    ram: '4 GB RAM',
-    almacenamiento: '64 GB almacenamiento',
-    precio: 110000,
-  },
-  'moto-g22': {
-    codigo: 'XT2231–2',
-    ram: '4 GB RAM',
-    almacenamiento: '128 GB almacenamiento',
-    precio: 150000,
-  },
-  'samsung-a12': {
-    codigo: 'SM–A125M',
-    ram: '4 GB RAM',
-    almacenamiento: '64 GB almacenamiento',
-    precio: 130000,
-  },
-  'moto-g32': {
-    codigo: 'XT2235–2',
-    ram: '4 GB RAM',
-    almacenamiento: '128 GB almacenamiento',
-    precio: 160000,
-  },
+const VARIANTES_MOCK: Record<string, VarianteDispositivoMock[]> = {
+  'samsung-a03': [
+    { id: 'a03-m', codigo: 'SM-A035M', ram: '4 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 150000, comun: true },
+    { id: 'a03-f', codigo: 'SM-A035F', ram: '3 GB RAM', almacenamiento: '32 GB almacenamiento', precio: 135000 },
+    { id: 'a03-g', codigo: 'SM-A035G', ram: '4 GB RAM', almacenamiento: '128 GB almacenamiento', precio: 165000 },
+    { id: 'a03-g-ds', codigo: 'SM-A035G/DS', ram: '4 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 150000 },
+  ],
+  'samsung-a10': [{ id: 'a10-m', codigo: 'SM-A105M', ram: '2 GB RAM', almacenamiento: '32 GB almacenamiento', precio: 95000, comun: true }],
+  'samsung-a14': [{ id: 'a14-m', codigo: 'SM-A145M', ram: '4 GB RAM', almacenamiento: '128 GB almacenamiento', precio: 180000, comun: true }],
+  'moto-e13': [{ id: 'e13', codigo: 'XT2345-5', ram: '2 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 105000, comun: true }],
+  'samsung-a04': [{ id: 'a04-m', codigo: 'SM-A045M', ram: '4 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 110000, comun: true }],
+  'moto-g22': [{ id: 'g22', codigo: 'XT2231-2', ram: '4 GB RAM', almacenamiento: '128 GB almacenamiento', precio: 150000, comun: true }],
+  'samsung-a12': [{ id: 'a12-m', codigo: 'SM-A125M', ram: '4 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 130000, comun: true }],
+  'moto-g32': [{ id: 'g32', codigo: 'XT2235-2', ram: '4 GB RAM', almacenamiento: '128 GB almacenamiento', precio: 160000, comun: true }],
 };
 
 export default function SeleccionarTelefonoScreen() {
   const { dispositivoId } = useLocalSearchParams<{ dispositivoId: string }>();
   const [fallasSeleccionadas, setFallasSeleccionadas] = useState<string[]>([]);
   const [detallesExpandido, setDetallesExpandido] = useState(true);
+  const [selectorVarianteVisible, setSelectorVarianteVisible] = useState(false);
 
   const dispositivo =
     dispositivosMock.find((d) => d.id === dispositivoId) ?? dispositivosMock[0];
-  const infoVariante =
-    VARIANTES_MOCK[dispositivo.id] ?? VARIANTES_MOCK['samsung-a03'];
+  const variantes = VARIANTES_MOCK[dispositivo.id] ?? VARIANTES_MOCK['samsung-a03'];
+  const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState(variantes[0].id);
+  const infoVariante = variantes.find((variante) => variante.id === varianteSeleccionadaId) ?? variantes[0];
 
   const toggleFalla = (id: string) => {
     setFallasSeleccionadas((prev) =>
@@ -142,6 +110,8 @@ export default function SeleccionarTelefonoScreen() {
         <TouchableOpacity
           activeOpacity={0.8}
           accessibilityRole="button"
+          accessibilityLabel="Seleccionar variante del dispositivo"
+          onPress={() => setSelectorVarianteVisible(true)}
           style={styles.card}
         >
           <View style={styles.variantRow}>
@@ -292,6 +262,19 @@ export default function SeleccionarTelefonoScreen() {
           <Text style={styles.continueButtonText}>Continuar</Text>
         </TouchableOpacity>
       </View>
+
+      {selectorVarianteVisible && (
+        <DeviceVariantSheet
+          onClose={() => setSelectorVarianteVisible(false)}
+          onConfirm={(varianteId) => {
+            setVarianteSeleccionadaId(varianteId);
+            setSelectorVarianteVisible(false);
+          }}
+          varianteSeleccionadaId={varianteSeleccionadaId}
+          variantes={variantes}
+          visible
+        />
+      )}
     </SafeAreaView>
   );
 }

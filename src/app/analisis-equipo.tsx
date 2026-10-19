@@ -58,7 +58,10 @@ export default function AnalisisEquipoScreen() {
           accessibilityLabel="Guardar análisis y continuar"
           accessibilityRole="button"
           activeOpacity={0.85}
-          onPress={() => router.replace('/(tabs)/proyectos')}
+          onPress={() => router.push({
+            pathname: '/guardar-proyecto',
+            params: { dispositivoId: dispositivo.id },
+          })}
           style={styles.saveButton}
         >
           <Text style={styles.saveButtonText}>Guardar análisis y continuar</Text>

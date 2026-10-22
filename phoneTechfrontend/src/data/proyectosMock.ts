@@ -1,4 +1,4 @@
-import { Proyecto, EstadoProyecto, MovimientoProyecto } from '@/types/proyecto';
+import { Proyecto, EstadoProyecto, MovimientoProyecto, FallaDiagnostico } from '@/types/proyecto';
 
 /**
  * Datos de prueba — se reemplazarán por llamadas a la API cuando el backend esté listo.
@@ -268,6 +268,36 @@ export function actualizarPrecioProyectoMock(id: string, nuevoPrecioVenta: numbe
           ? nuevoPrecioVenta
           : estadoPrevio.precioVentaFinal,
       ganancia: nuevaGanancia,
+    };
+
+    listeners.forEach((listener) => listener());
+    return proyectosMock[index];
+  }
+  return undefined;
+}
+
+export function actualizarDiagnosticoProyectoMock(
+  id: string,
+  nuevasFallas: FallaDiagnostico[]
+) {
+  const index = proyectosMock.findIndex((p) => p.id === id);
+  if (index !== -1) {
+    const estadoPrevio = proyectosMock[index];
+    const legacyDiagnostico = nuevasFallas.map((f) => `${f.componente}: ${f.descripcion}`);
+    const movimientos = estadoPrevio.movimientos ?? [];
+
+    const nuevoMovimiento: MovimientoProyecto = {
+      id: `m-diag-${Date.now()}`,
+      tipo: 'diagnostico',
+      descripcion: `Diagnóstico actualizado (${nuevasFallas.length} fallas)`,
+      fecha: new Date().toISOString(),
+    };
+
+    proyectosMock[index] = {
+      ...estadoPrevio,
+      fallas: nuevasFallas,
+      diagnostico: legacyDiagnostico,
+      movimientos: [nuevoMovimiento, ...movimientos],
     };
 
     listeners.forEach((listener) => listener());

@@ -16,14 +16,16 @@ import {
   obtenerProyectosMock,
   suscribirProyectosMock,
   actualizarEstadoProyectoMock,
+  actualizarDiagnosticoProyectoMock,
 } from '@/data/proyectosMock';
-import { EstadoProyecto } from '@/types/proyecto';
+import { EstadoProyecto, FallaDiagnostico } from '@/types/proyecto';
 import { DetalleIdentificacion } from '@/components/detalle-proyecto/DetalleIdentificacion';
 import { DetalleResumenEconomico } from '@/components/detalle-proyecto/DetalleResumenEconomico';
 import { DetalleDiagnostico } from '@/components/detalle-proyecto/DetalleDiagnostico';
 import { DetalleEstadoCard } from '@/components/detalle-proyecto/DetalleEstadoCard';
 import { OpcionesProyectoSheet } from '@/components/detalle-proyecto/OpcionesProyectoSheet';
 import { CambiarEstadoSheet } from '@/components/detalle-proyecto/CambiarEstadoSheet';
+import { EditarDiagnosticoSheet } from '@/components/detalle-proyecto/EditarDiagnosticoSheet';
 
 const accionPorEstado: Record<
   EstadoProyecto,
@@ -41,6 +43,7 @@ export default function DetalleProyectoScreen() {
   const insets = useSafeAreaInsets();
   const [sheetVisible, setSheetVisible] = useState(false);
   const [cambiarEstadoVisible, setCambiarEstadoVisible] = useState(false);
+  const [editarDiagnosticoVisible, setEditarDiagnosticoVisible] = useState(false);
 
   // Sincronización reactiva con los proyectos mock
   const proyectos = useSyncExternalStore(
@@ -68,6 +71,14 @@ export default function DetalleProyectoScreen() {
     [proyecto]
   );
 
+  const handleGuardarDiagnostico = useCallback(
+    (nuevasFallas: FallaDiagnostico[]) => {
+      if (!proyecto) return;
+      actualizarDiagnosticoProyectoMock(proyecto.id, nuevasFallas);
+    },
+    [proyecto]
+  );
+
   const handleSelectOption = useCallback((optionId: string) => {
     setSheetVisible(false);
 
@@ -76,7 +87,7 @@ export default function DetalleProyectoScreen() {
         Alert.alert('Editar datos', `Editar datos de ${proyecto?.modelo}.`);
         break;
       case 'editar-diagnostico':
-        Alert.alert('Editar diagnóstico', `Modificar fallas de ${proyecto?.modelo}.`);
+        setEditarDiagnosticoVisible(true);
         break;
       case 'modificar-precios':
         router.push({

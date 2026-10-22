@@ -6,6 +6,7 @@ import { Proyecto, FallaDiagnostico } from '@/types/proyecto';
 
 interface Props {
   proyecto: Proyecto;
+  onEditar?: () => void;
 }
 
 const getIconForComponente = (componente: string): keyof typeof Ionicons.glyphMap => {
@@ -34,7 +35,7 @@ const getIconForComponente = (componente: string): keyof typeof Ionicons.glyphMa
   return 'construct-outline';
 };
 
-export const DetalleDiagnostico = ({ proyecto }: Props) => {
+export const DetalleDiagnostico = ({ proyecto, onEditar }: Props) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [fallaSeleccionada, setFallaSeleccionada] = useState<FallaDiagnostico | null>(null);
 
@@ -94,22 +95,22 @@ export const DetalleDiagnostico = ({ proyecto }: Props) => {
         })}
       </View>
 
-      {/* Botón Editar */}
-      {totalFallas > 0 && (
-        <TouchableOpacity
-          style={styles.verTodasButton}
-          onPress={() => setModalVisible(true)}
-          activeOpacity={0.8}
-        >
-          <Ionicons
-            name="pencil"
-            size={14}
-            color={Colors.primary}
-            style={{ marginRight: 6 }}
-          />
-          <Text style={styles.verTodasText}>Editar</Text>
-        </TouchableOpacity>
-      )}
+      {/* Botón Editar / Agregar */}
+      <TouchableOpacity
+        style={styles.verTodasButton}
+        onPress={onEditar ?? (() => setModalVisible(true))}
+        activeOpacity={0.8}
+      >
+        <Ionicons
+          name={totalFallas > 0 ? 'pencil' : 'add-circle-outline'}
+          size={14}
+          color={Colors.primary}
+          style={{ marginRight: 6 }}
+        />
+        <Text style={styles.verTodasText}>
+          {totalFallas > 0 ? 'Editar' : 'Agregar fallas'}
+        </Text>
+      </TouchableOpacity>
 
       {/* Modal para ver todas las fallas */}
       <Modal

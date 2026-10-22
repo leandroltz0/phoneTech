@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,8 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
+import { SelectionSheet } from '@/components/dispositivos/SelectionSheet';
 
 export type VarianteDispositivoMock = {
   id: string;
@@ -61,29 +60,34 @@ export function DeviceVariantSheet({
   };
 
   return (
-    <Modal
-      animationType="slide"
-      onRequestClose={closeSheet}
-      statusBarTranslucent
-      transparent
+    <SelectionSheet
+      closeLabel="Cerrar selector de variante"
+      description="Elegí la versión exacta de este modelo para ver la compatibilidad de los repuestos."
+      footer={(
+        <>
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.84}
+            onPress={confirmSelection}
+            style={styles.continueButton}
+          >
+            <Ionicons name="play-forward" size={21} color="#0879D9" />
+            <Text style={styles.continueText}>Continuar</Text>
+          </TouchableOpacity>
+
+          <View style={styles.hintRow}>
+            <Ionicons name="information-circle" color="#526B9C" size={24} />
+            <Text style={styles.hintText}>
+              Si no conocés la variante exacta, podés continuar. La compatibilidad de los repuestos se verificará después.
+            </Text>
+          </View>
+        </>
+      )}
+      onClose={closeSheet}
+      title="Seleccionar variante"
       visible={visible}
     >
-      <View style={styles.modalRoot}>
-        <TouchableOpacity
-          accessibilityLabel="Cerrar selector de variante"
-          accessibilityRole="button"
-          activeOpacity={1}
-          onPress={closeSheet}
-          style={styles.backdrop}
-        />
-        <SafeAreaView edges={['bottom']} style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>Seleccionar variante</Text>
-          <Text style={styles.description}>
-            Elegí la versión exacta de este modelo para ver la compatibilidad de los repuestos.
-          </Text>
-
-          <View style={styles.searchBox}>
+      <View style={styles.searchBox}>
             <Ionicons name="search-outline" size={23} color="#7187B0" />
             <TextInput
               accessibilityLabel="Buscar variante por código de modelo"
@@ -95,9 +99,9 @@ export function DeviceVariantSheet({
               style={styles.searchInput}
               value={busqueda}
             />
-          </View>
+      </View>
 
-          <ScrollView
+      <ScrollView
             contentContainerStyle={styles.optionsContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -141,44 +145,13 @@ export function DeviceVariantSheet({
             {variantesFiltradas.length === 0 && (
               <Text style={styles.emptyText}>No encontramos una variante con ese código.</Text>
             )}
-          </ScrollView>
+      </ScrollView>
 
-          <TouchableOpacity
-            accessibilityRole="button"
-            activeOpacity={0.84}
-            onPress={confirmSelection}
-            style={styles.continueButton}
-          >
-            <Ionicons name="play-forward" size={21} color="#0879D9" />
-            <Text style={styles.continueText}>Continuar</Text>
-          </TouchableOpacity>
-
-          <View style={styles.hintRow}>
-            <Ionicons name="information-circle" color="#526B9C" size={24} />
-            <Text style={styles.hintText}>
-              Si no conocés la variante exacta, podés continuar. La compatibilidad de los repuestos se verificará después.
-            </Text>
-          </View>
-        </SafeAreaView>
-      </View>
-    </Modal>
+    </SelectionSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(5, 20, 52, 0.52)' },
-  sheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 34,
-    borderTopRightRadius: 34,
-    maxHeight: '78%',
-    paddingHorizontal: 20,
-    paddingTop: 14,
-  },
-  handle: { alignSelf: 'center', backgroundColor: '#9BAAC9', borderRadius: 4, height: 5, marginBottom: 22, width: 59 },
-  title: { color: Colors.analisis.title, fontSize: 25, fontWeight: '800', letterSpacing: -0.8 },
-  description: { color: '#566C9B', fontSize: 15, lineHeight: 20, marginTop: 4 },
   searchBox: {
     alignItems: 'center',
     borderColor: '#CDDCF5',

@@ -15,21 +15,27 @@ import {
   DeviceVariantSheet,
   VarianteDispositivoMock,
 } from '@/components/dispositivos/DeviceVariantSheet';
+import {
+  COMPONENT_ISSUES,
+  ComponentIssueSheet,
+} from '@/components/dispositivos/ModuleIssueSheet';
 import { dispositivosMock } from '@/data/dispositivosMock';
 
-// ─── Categorías de fallas (3 filas de 3 columnas exactas al diseño) ─────────
+// ─── Categorías de fallas ────────────────────────────────────────────────────
 
 const CATEGORIAS_FALLAS = [
-  { id: 'modulo', label: 'Módulo' },
-  { id: 'camara', label: 'Cámara' },
-  { id: 'tapa', label: 'Tapa' },
-  { id: 'sim', label: 'SIM' },
-  { id: 'bateria', label: 'Batería' },
-  { id: 'carga', label: 'Carga' },
-  { id: 'botones', label: 'Botones' },
-  { id: 'audio', label: 'Audio' },
-  { id: 'placa', label: 'Placa' },
+  { id: 'modulo', label: 'Módulo / pantalla', description: 'Vidrio roto, sin imagen, líneas o fallas táctiles.' },
+  { id: 'bateria', label: 'Batería', description: 'Se descarga rápido, no carga bien o está hinchada.' },
+  { id: 'carga', label: 'Carga', description: 'Pin dañado, flex de carga o conexión intermitente.' },
+  { id: 'tapa', label: 'Tapa y carcasa', description: 'Tapa rota, marco doblado o carcasa dañada.' },
+  { id: 'camara', label: 'Cámara', description: 'Cámara que no funciona, lente o vidrio roto.' },
+  { id: 'audio', label: 'Audio', description: 'Parlante, auricular o micrófono sin funcionar.' },
+  { id: 'botones', label: 'Botones y flex', description: 'Encendido, volumen o flex sin respuesta.' },
+  { id: 'sim', label: 'SIM y conectividad', description: 'No reconoce SIM, problemas de señal o Wi-Fi.' },
+  { id: 'placa', label: 'Placa y otros', description: 'Fallos de placa, reinicios, humedad u otros daños internos.' },
 ] as const;
+
+type CategoriaFallaId = (typeof CATEGORIAS_FALLAS)[number]['id'];
 
 // ─── Variantes y estimaciones de reventa mock ────────────────────────────────
 
@@ -51,9 +57,10 @@ const VARIANTES_MOCK: Record<string, VarianteDispositivoMock[]> = {
 
 export default function SeleccionarTelefonoScreen() {
   const { dispositivoId } = useLocalSearchParams<{ dispositivoId: string }>();
-  const [fallasSeleccionadas, setFallasSeleccionadas] = useState<string[]>([]);
+  const [fallasSeleccionadas, setFallasSeleccionadas] = useState<Partial<Record<CategoriaFallaId, string>>>({});
   const [detallesExpandido, setDetallesExpandido] = useState(true);
   const [selectorVarianteVisible, setSelectorVarianteVisible] = useState(false);
+  const [categoriaActivaId, setCategoriaActivaId] = useState<CategoriaFallaId>();
 
   const dispositivo =
     dispositivosMock.find((d) => d.id === dispositivoId) ?? dispositivosMock[0];
@@ -61,16 +68,14 @@ export default function SeleccionarTelefonoScreen() {
   const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState(variantes[0].id);
   const infoVariante = variantes.find((variante) => variante.id === varianteSeleccionadaId) ?? variantes[0];
 
-  const toggleFalla = (id: string) => {
-    setFallasSeleccionadas((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id],
-    );
-  };
-
-  const fallasTexto = fallasSeleccionadas
-    .map((id) => CATEGORIAS_FALLAS.find((c) => c.id === id)?.label)
-    .filter(Boolean)
-    .join(', ');
+  const categoriaActiva = CATEGORIAS_FALLAS.find((cat) => cat.id === categoriaActivaId);
+  const fallasDetalladas = CATEGORIAS_FALLAS.flatMap((category) => {
+    const issueId = fallasSeleccionadas[category.id];
+    const issue = COMPONENT_ISSUES[category.id].find((item) => item.id === issueId);
+    return issue ? [{ category, issue }] : [];
+  });
+  const fallasTotales = fallasDetalladas.length;
+  const fallasTexto = fallasDetalladas.map(({ category }) => category.label).join(', ');
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -174,7 +179,7 @@ export default function SeleccionarTelefonoScreen() {
             </View>
             <View style={styles.countBadge}>
               <Text style={styles.countBadgeText}>
-                {fallasSeleccionadas.length} seleccionados
+                {fallasTotales} seleccionados
               </Text>
             </View>
           </TouchableOpacity>
@@ -187,7 +192,7 @@ export default function SeleccionarTelefonoScreen() {
 
               <View style={styles.gridContainer}>
                 {CATEGORIAS_FALLAS.map((cat) => {
-                  const isSelected = fallasSeleccionadas.includes(cat.id);
+                  const isSelected = Boolean(fallasSeleccionadas[cat.id]);
                   return (
                     <TouchableOpacity
                       key={cat.id}
@@ -195,7 +200,7 @@ export default function SeleccionarTelefonoScreen() {
                       accessibilityRole="button"
                       accessibilityState={{ selected: isSelected }}
                       activeOpacity={0.75}
-                      onPress={() => toggleFalla(cat.id)}
+                      onPress={() => setCategoriaActivaId(cat.id)}
                       style={[
                         styles.chip,
                         isSelected && styles.chipSelected,
@@ -226,24 +231,37 @@ export default function SeleccionarTelefonoScreen() {
         <View style={styles.infoCard}>
           <View style={styles.infoIconWrapper}>
             <Ionicons
-              name={fallasSeleccionadas.length > 0 ? 'checkmark-circle' : 'clipboard-outline'}
+              name={fallasTotales > 0 ? 'checkmark-circle' : 'clipboard-outline'}
               size={30}
               color="#378CC4"
             />
           </View>
           <View style={styles.infoTextWrapper}>
             <Text style={styles.infoTitle}>
-              {fallasSeleccionadas.length === 0
+              {fallasTotales === 0
                 ? 'Sin fallas seleccionadas'
-                : `${fallasSeleccionadas.length} falla${fallasSeleccionadas.length > 1 ? 's' : ''} seleccionada${fallasSeleccionadas.length > 1 ? 's' : ''}`}
+                : `${fallasTotales} falla${fallasTotales > 1 ? 's' : ''} seleccionada${fallasTotales > 1 ? 's' : ''}`}
             </Text>
             <Text style={styles.infoSubtitle}>
-              {fallasSeleccionadas.length === 0
+              {fallasTotales === 0
                 ? 'Agregá los componentes con problemas para continuar con el diagnóstico.'
                 : `Componentes marcados: ${fallasTexto}`}
             </Text>
           </View>
         </View>
+
+        {fallasDetalladas.map(({ category, issue }) => (
+          <View key={category.id} style={styles.issueCard}>
+            <View style={styles.issueCardIcon}>
+              <Ionicons name="phone-portrait-outline" size={21} color="#167FB9" />
+            </View>
+            <View style={styles.issueCardContent}>
+              <Text style={styles.issueCardComponent}>{category.label.toUpperCase()}</Text>
+              <Text style={styles.issueCardTitle}>{issue.title}</Text>
+              <Text style={styles.issueCardDescription}>{issue.description}</Text>
+            </View>
+          </View>
+        ))}
       </ScrollView>
 
       {/* ─── Botón inferior Continuar ───────────────────────────── */}
@@ -254,7 +272,11 @@ export default function SeleccionarTelefonoScreen() {
           onPress={() => {
             router.push({
               pathname: '/analisis-equipo',
-              params: { dispositivoId: dispositivo.id },
+              params: {
+                dispositivoId: dispositivo.id,
+                variante: `${infoVariante.codigo} · ${infoVariante.ram} / ${infoVariante.almacenamiento}`,
+                diagnostico: JSON.stringify(fallasDetalladas.map(({ category, issue }) => `${category.label}: ${issue.title}`)),
+              },
             });
           }}
           style={styles.continueButton}
@@ -275,6 +297,22 @@ export default function SeleccionarTelefonoScreen() {
           visible
         />
       )}
+
+      <ComponentIssueSheet
+        key={`${categoriaActivaId ?? 'none'}-${categoriaActiva ? fallasSeleccionadas[categoriaActiva.id] ?? 'none' : 'none'}`}
+        componentLabel={categoriaActiva?.label ?? ''}
+        componentDescription={categoriaActiva?.description ?? ''}
+        issueId={categoriaActiva ? fallasSeleccionadas[categoriaActiva.id] : undefined}
+        issues={categoriaActiva ? COMPONENT_ISSUES[categoriaActiva.id] : []}
+        onClose={() => setCategoriaActivaId(undefined)}
+        onConfirm={(issueId) => {
+          if (categoriaActiva) {
+            setFallasSeleccionadas((previous) => ({ ...previous, [categoriaActiva.id]: issueId }));
+          }
+          setCategoriaActivaId(undefined);
+        }}
+        visible={Boolean(categoriaActiva)}
+      />
     </SafeAreaView>
   );
 }
@@ -492,7 +530,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: 5,
-    height: 38,
+    height: 42,
     justifyContent: 'center',
     width: '31.5%',
   },
@@ -502,8 +540,9 @@ const styles = StyleSheet.create({
   },
   chipLabel: {
     color: '#263746',
-    fontSize: 12.5,
+    fontSize: 10.5,
     fontWeight: '600',
+    textAlign: 'center',
   },
   chipLabelSelected: {
     color: '#FFFFFF',
@@ -536,6 +575,35 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     lineHeight: 16,
   },
+  issueCard: {
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D7EAF6',
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginBottom: 8,
+    padding: 14,
+  },
+  issueCardIcon: {
+    alignItems: 'center',
+    backgroundColor: '#E5F5FE',
+    borderRadius: 12,
+    height: 42,
+    justifyContent: 'center',
+    marginRight: 12,
+    width: 42,
+  },
+  issueCardContent: { flex: 1 },
+  issueCardComponent: {
+    color: '#378CC4',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: 3,
+  },
+  issueCardTitle: { color: '#10264C', fontSize: 15, fontWeight: '800', marginBottom: 3 },
+  issueCardDescription: { color: '#718398', fontSize: 11.5, lineHeight: 16 },
   footerContainer: {
     backgroundColor: Colors.background,
     paddingHorizontal: 20,

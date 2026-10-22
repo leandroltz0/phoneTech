@@ -4,7 +4,7 @@ import { Proyecto } from '@/types/proyecto';
  * Datos de prueba — se reemplazarán por llamadas a la API cuando el backend esté listo.
  * La estructura refleja exactamente el tipo Proyecto para facilitar la migración.
  */
-export const proyectosMock: Proyecto[] = [
+let proyectosMock: Proyecto[] = [
   {
     id: '1',
     numero: 1,
@@ -79,3 +79,32 @@ export const proyectosMock: Proyecto[] = [
     fechaCreacion: '2026-10-12T15:00:00Z',
   },
 ];
+
+const listeners = new Set<() => void>();
+
+export function obtenerProyectosMock() {
+  return proyectosMock;
+}
+
+export function obtenerProximoNumeroProyectoMock() {
+  return Math.max(0, ...proyectosMock.map((item) => item.numero)) + 1;
+}
+
+export function suscribirProyectosMock(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function guardarProyectoMock(proyecto: Omit<Proyecto, 'id' | 'numero'>) {
+  const numero = obtenerProximoNumeroProyectoMock();
+  const nuevoProyecto: Proyecto = {
+    ...proyecto,
+    id: `mock-${Date.now()}`,
+    numero,
+  };
+
+  proyectosMock = [nuevoProyecto, ...proyectosMock];
+  listeners.forEach((listener) => listener());
+
+  return nuevoProyecto;
+}

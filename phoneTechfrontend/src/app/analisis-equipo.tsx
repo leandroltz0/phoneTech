@@ -14,7 +14,11 @@ import { dispositivosMock } from '@/data/dispositivosMock';
 const DEFAULT_VARIANT = 'SM-A035M · 4 GB RAM · 64 GB';
 
 export default function AnalisisEquipoScreen() {
-  const { dispositivoId } = useLocalSearchParams<{ dispositivoId?: string }>();
+  const { dispositivoId, variante, diagnostico } = useLocalSearchParams<{
+    dispositivoId?: string;
+    variante?: string;
+    diagnostico?: string;
+  }>();
   const dispositivo = dispositivosMock.find(({ id }) => id === dispositivoId) ?? dispositivosMock[0];
 
   const showPendingDetails = (section: string) => {
@@ -40,7 +44,7 @@ export default function AnalisisEquipoScreen() {
         <DeviceAnalysisHeader
           marca={dispositivo.marca}
           modelo={dispositivo.modelo}
-          variante={DEFAULT_VARIANT}
+          variante={variante ?? DEFAULT_VARIANT}
         />
         <AnalysisSummaryCard
           items={resumenAnalisisMock}
@@ -60,7 +64,7 @@ export default function AnalisisEquipoScreen() {
           activeOpacity={0.85}
           onPress={() => router.push({
             pathname: '/guardar-proyecto',
-            params: { dispositivoId: dispositivo.id },
+            params: { dispositivoId: dispositivo.id, variante, diagnostico },
           })}
           style={styles.saveButton}
         >

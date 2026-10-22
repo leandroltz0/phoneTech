@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
+import { UnlockToolSupportBadge } from '@/components/dispositivos/UnlockToolSupportBadge';
 import { dispositivosMock, DispositivoMock } from '@/data/dispositivosMock';
 
 function PhonePreview({ dispositivo }: { dispositivo: DispositivoMock }) {
@@ -64,6 +65,7 @@ export default function SeleccionarDispositivoScreen() {
         </View>
         <Text style={styles.brand}>{item.marca}</Text>
         <Text style={styles.model}>{item.modelo}</Text>
+        <UnlockToolSupportBadge supported={item.unlockToolSupported} />
       </TouchableOpacity>
     );
   };
@@ -207,7 +209,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 2,
     flex: 1,
-    height: 182,
+    height: 195,
     overflow: 'hidden',
     paddingBottom: 17,
     paddingHorizontal: 13,

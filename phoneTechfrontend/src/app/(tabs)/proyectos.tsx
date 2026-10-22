@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useSyncExternalStore } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
-import { proyectosMock } from '@/data/proyectosMock';
+import { obtenerProyectosMock, suscribirProyectosMock } from '@/data/proyectosMock';
 import { ProyectoCard } from '@/components/proyectos/ProyectoCard';
 import { ProyectosSearch } from '@/components/proyectos/ProyectosSearch';
 import { ProyectosFilters, FiltroProyecto } from '@/components/proyectos/ProyectosFilters';
@@ -16,6 +16,7 @@ import { Proyecto } from '@/types/proyecto';
 export default function ProyectosScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<FiltroProyecto>('todos');
+  const proyectosMock = useSyncExternalStore(suscribirProyectosMock, obtenerProyectosMock, obtenerProyectosMock);
 
   const proyectosFiltrados = useMemo(() => {
     return proyectosMock.filter((p: Proyecto) => {
@@ -28,7 +29,7 @@ export default function ProyectosScreen() {
 
       return coincideBusqueda && coincideFiltro;
     });
-  }, [busqueda, filtro]);
+  }, [busqueda, filtro, proyectosMock]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>

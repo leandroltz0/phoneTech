@@ -9,9 +9,15 @@ import { ProjectSummaryCard } from '@/components/guardar-proyecto/ProjectSummary
 import { Colors } from '@/constants/colors';
 import { EstadoGuardadoProyecto, proyectoPendienteMock } from '@/data/guardarProyectoMock';
 import { dispositivosMock } from '@/data/dispositivosMock';
+import { guardarProyectoMock, obtenerProximoNumeroProyectoMock } from '@/data/proyectosMock';
+import { EstadoProyecto } from '@/types/proyecto';
 
 export default function GuardarProyectoScreen() {
-  const { dispositivoId } = useLocalSearchParams<{ dispositivoId?: string }>();
+  const { dispositivoId, variante, diagnostico } = useLocalSearchParams<{
+    dispositivoId?: string;
+    variante?: string;
+    diagnostico?: string;
+  }>();
   const dispositivo = dispositivosMock.find(({ id }) => id === dispositivoId) ?? dispositivosMock[0];
   const [estado, setEstado] = useState<EstadoGuardadoProyecto>('pendiente');
   const [statusExpanded, setStatusExpanded] = useState(false);
@@ -19,6 +25,32 @@ export default function GuardarProyectoScreen() {
   const updateStatus = (newStatus: EstadoGuardadoProyecto) => {
     setEstado(newStatus);
     setStatusExpanded(false);
+  };
+
+  const diagnosticoSeleccionado = (() => {
+    try {
+      const parsed: unknown = diagnostico ? JSON.parse(diagnostico) : null;
+      return Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')
+        ? parsed
+        : proyectoPendienteMock.diagnostico;
+    } catch {
+      return proyectoPendienteMock.diagnostico;
+    }
+  })();
+
+  const saveProject = () => {
+    const estadoProyecto: EstadoProyecto = estado === 'pendiente' ? 'evaluacion' : estado;
+    guardarProyectoMock({
+      modelo: `${dispositivo.marca} ${dispositivo.modelo}`,
+      marca: dispositivo.marca,
+      imagen: getDeviceImage(dispositivo.id),
+      diagnostico: diagnosticoSeleccionado,
+      estado: estadoProyecto,
+      gananciaTipo: 'estimada',
+      ganancia: proyectoPendienteMock.gananciaEstimada,
+      fechaCreacion: new Date().toISOString(),
+    });
+    router.replace('/(tabs)/proyectos');
   };
 
   return (
@@ -36,11 +68,11 @@ export default function GuardarProyectoScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <ProjectSummaryCard
-          diagnostico={proyectoPendienteMock.diagnostico}
+          diagnostico={diagnosticoSeleccionado}
           marca={dispositivo.marca}
           modelo={dispositivo.modelo}
-          numero={proyectoPendienteMock.numero}
-          variante={proyectoPendienteMock.variante}
+          numero={obtenerProximoNumeroProyectoMock()}
+          variante={variante ?? proyectoPendienteMock.variante}
         />
         <ProjectFinancialSnapshot
           fechaInicio={proyectoPendienteMock.fechaInicio}
@@ -56,7 +88,7 @@ export default function GuardarProyectoScreen() {
         <TouchableOpacity
           accessibilityRole="button"
           activeOpacity={0.78}
-          onPress={() => router.push({ pathname: '/analisis-equipo', params: { dispositivoId: dispositivo.id } })}
+          onPress={() => router.push({ pathname: '/analisis-equipo', params: { dispositivoId: dispositivo.id, variante, diagnostico } })}
           style={styles.detailsLink}
         >
           <View style={styles.detailsIcon}>
@@ -76,7 +108,7 @@ export default function GuardarProyectoScreen() {
           accessibilityLabel="Guardar proyecto"
           accessibilityRole="button"
           activeOpacity={0.85}
-          onPress={() => router.replace('/(tabs)/proyectos')}
+          onPress={saveProject}
           style={styles.saveButton}
         >
           <Text style={styles.saveText}>Guardar proyecto</Text>
@@ -84,6 +116,21 @@ export default function GuardarProyectoScreen() {
       </View>
     </SafeAreaView>
   );
+}
+
+function getDeviceImage(dispositivoId: string) {
+  const images: Record<string, string> = {
+    'samsung-a03': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a03-1.jpg',
+    'samsung-a10': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a10-1.jpg',
+    'samsung-a14': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a14-5g-1.jpg',
+    'moto-e13': 'https://fdn2.gsmarena.com/vv/pics/motorola/motorola-moto-e13-1.jpg',
+    'samsung-a04': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a04-1.jpg',
+    'moto-g22': 'https://fdn2.gsmarena.com/vv/pics/motorola/motorola-moto-g22-1.jpg',
+    'samsung-a12': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a12-1.jpg',
+    'moto-g32': 'https://fdn2.gsmarena.com/vv/pics/motorola/moto-g32-1.jpg',
+  };
+
+  return images[dispositivoId] ?? images['samsung-a03'];
 }
 
 const styles = StyleSheet.create({

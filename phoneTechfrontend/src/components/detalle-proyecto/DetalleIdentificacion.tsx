@@ -1,12 +1,11 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Proyecto, EstadoProyecto } from '@/types/proyecto';
 
 interface Props {
   proyecto: Proyecto;
-  onEditarEstado?: () => void;
 }
 
 const formatNumero = (n: number) => `Proyecto #${String(n).padStart(3, '0')}`;
@@ -33,7 +32,7 @@ const estadoConfig: Record<
   vendido: { label: 'Vendido', ...Colors.estados.vendido, icon: 'checkmark-done-circle' },
 };
 
-export const DetalleIdentificacion = ({ proyecto, onEditarEstado }: Props) => {
+export const DetalleIdentificacion = ({ proyecto }: Props) => {
   const estado = estadoConfig[proyecto.estado];
 
   const imageSource =
@@ -65,36 +64,12 @@ export const DetalleIdentificacion = ({ proyecto, onEditarEstado }: Props) => {
             </Text>
           )}
 
-          {/* Fila: Badge de estado + Botón Editar */}
-          <View style={styles.estadoRow}>
-            <View style={[styles.estadoBadge, { backgroundColor: estado.bg }]}>
-              <Ionicons
-                name={estado.icon}
-                size={14}
-                color={estado.text}
-                style={styles.estadoIcon}
-              />
-              <Text style={[styles.estadoText, { color: estado.text }]}>
-                {estado.label}
-              </Text>
-            </View>
-
-            {onEditarEstado && (
-              <TouchableOpacity
-                style={styles.editarBtn}
-                onPress={onEditarEstado}
-                activeOpacity={0.7}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons
-                  name="pencil"
-                  size={12}
-                  color={Colors.primary}
-                  style={styles.editarIcon}
-                />
-                <Text style={styles.editarText}>Editar</Text>
-              </TouchableOpacity>
-            )}
+          {/* Badge de estado con icono */}
+          <View style={[styles.estadoBadge, { backgroundColor: estado.bg }]}>
+            <Ionicons name={estado.icon} size={14} color={estado.text} style={styles.estadoIcon} />
+            <Text style={[styles.estadoText, { color: estado.text }]}>
+              {estado.label}
+            </Text>
           </View>
 
           <Text style={styles.projectInfo}>
@@ -158,12 +133,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     fontWeight: '500',
   },
-  estadoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
   estadoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -171,6 +140,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 16,
+    marginBottom: 8,
   },
   estadoIcon: {
     marginRight: 5,
@@ -178,24 +148,6 @@ const styles = StyleSheet.create({
   estadoText: {
     fontSize: 12,
     fontWeight: '600',
-  },
-  editarBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFF7FC',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#D4E9F5',
-  },
-  editarIcon: {
-    marginRight: 4,
-  },
-  editarText: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    color: Colors.primary,
   },
   projectInfo: {
     fontSize: 12.5,
@@ -208,3 +160,4 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
 });
+

@@ -21,8 +21,7 @@ import { EstadoProyecto } from '@/types/proyecto';
 import { DetalleIdentificacion } from '@/components/detalle-proyecto/DetalleIdentificacion';
 import { DetalleResumenEconomico } from '@/components/detalle-proyecto/DetalleResumenEconomico';
 import { DetalleDiagnostico } from '@/components/detalle-proyecto/DetalleDiagnostico';
-import { DetalleGastos } from '@/components/detalle-proyecto/DetalleGastos';
-import { DetalleMovimientos } from '@/components/detalle-proyecto/DetalleMovimientos';
+import { DetalleEstadoCard } from '@/components/detalle-proyecto/DetalleEstadoCard';
 import { OpcionesProyectoSheet } from '@/components/detalle-proyecto/OpcionesProyectoSheet';
 import { CambiarEstadoSheet } from '@/components/detalle-proyecto/CambiarEstadoSheet';
 
@@ -181,10 +180,20 @@ export default function DetalleProyectoScreen() {
         showsVerticalScrollIndicator={false}
       >
         <DetalleIdentificacion proyecto={proyecto} />
-        <DetalleResumenEconomico proyecto={proyecto} />
+        <DetalleResumenEconomico
+          proyecto={proyecto}
+          onEditar={() =>
+            router.push({
+              pathname: '/modificar-precios',
+              params: { id: proyecto.id },
+            })
+          }
+        />
         <DetalleDiagnostico proyecto={proyecto} />
-        <DetalleGastos proyecto={proyecto} />
-        <DetalleMovimientos proyecto={proyecto} />
+        <DetalleEstadoCard
+          proyecto={proyecto}
+          onCambiarEstado={() => setCambiarEstadoVisible(true)}
+        />
       </ScrollView>
 
       {/* ─── Botón inferior de acción principal ─── */}

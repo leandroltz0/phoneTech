@@ -94,16 +94,20 @@ export const DetalleDiagnostico = ({ proyecto }: Props) => {
         })}
       </View>
 
-      {/* Botón Ver todas las fallas */}
+      {/* Botón Editar */}
       {totalFallas > 0 && (
         <TouchableOpacity
           style={styles.verTodasButton}
           onPress={() => setModalVisible(true)}
           activeOpacity={0.8}
         >
-          <Text style={styles.verTodasText}>
-            Ver todas las fallas ({totalFallas})
-          </Text>
+          <Ionicons
+            name="pencil"
+            size={14}
+            color={Colors.primary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={styles.verTodasText}>Editar</Text>
         </TouchableOpacity>
       )}
 
@@ -261,6 +265,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   verTodasButton: {
+    flexDirection: 'row',
     marginTop: 10,
     backgroundColor: '#EFF7FC',
     borderRadius: 24,

@@ -122,6 +122,37 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  cardHeaderTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#10264C',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  editarBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D4E9F5',
+  },
+  editarIcon: {
+    marginRight: 4,
+  },
+  editarText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
   topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',

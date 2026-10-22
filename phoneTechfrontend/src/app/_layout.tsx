@@ -37,6 +37,14 @@ export default function RootLayout() {
           name="guardar-proyecto"
           options={{ headerShown: false, animation: 'slide_from_right' }}
         />
+        <Stack.Screen
+          name="detalle-proyecto"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="modificar-precios"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
+        />
       </Stack>
     </PaperProvider>
   );

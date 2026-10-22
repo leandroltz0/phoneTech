@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
 import { obtenerProyectosMock, suscribirProyectosMock } from '@/data/proyectosMock';
@@ -14,6 +15,7 @@ import { ProyectosFilters, FiltroProyecto } from '@/components/proyectos/Proyect
 import { Proyecto } from '@/types/proyecto';
 
 export default function ProyectosScreen() {
+  const router = useRouter();
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<FiltroProyecto>('todos');
   const proyectosMock = useSyncExternalStore(suscribirProyectosMock, obtenerProyectosMock, obtenerProyectosMock);
@@ -36,7 +38,17 @@ export default function ProyectosScreen() {
       <FlatList
         data={proyectosFiltrados}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ProyectoCard proyecto={item} />}
+        renderItem={({ item }) => (
+          <ProyectoCard
+            proyecto={item}
+            onPress={() =>
+              router.push({
+                pathname: '/detalle-proyecto',
+                params: { id: item.id },
+              })
+            }
+          />
+        )}
         ListHeaderComponent={
           <View>
             {/* Encabezado */}

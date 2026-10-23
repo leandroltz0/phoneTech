@@ -21,14 +21,21 @@ type BottomTabBarProps = Parameters<
  */
 export const CustomBottomNavBar = ({
   state,
-  navigation,
   insets,
+  navigateToTab,
 }: BottomTabBarProps) => {
   const currentRoute = state.routes[state.index];
   const currentRouteName = currentRoute?.name;
 
   const isProyectosActive = currentRouteName === 'proyectos';
   const isGananciasActive = currentRouteName === 'ganancias';
+
+  const goToTab = (routeName: string) => {
+    const route = state.routes.find((item) => item.name === routeName);
+    if (route) {
+      navigateToTab(route.key);
+    }
+  };
 
   if (currentRouteName === 'crear-proyecto') {
     return null;
@@ -46,7 +53,7 @@ export const CustomBottomNavBar = ({
         <View style={styles.tabSlot}>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => navigation.navigate('proyectos')}
+            onPress={() => goToTab('proyectos')}
             style={[
               styles.tabItem,
               isProyectosActive && styles.tabItemActive,
@@ -72,7 +79,7 @@ export const CustomBottomNavBar = ({
         <View style={styles.centerSlot}>
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => navigation.navigate('crear-proyecto')}
+            onPress={() => goToTab('crear-proyecto')}
             style={styles.addButton}
           >
             <Ionicons name="add" size={28} color={Colors.surface} />
@@ -83,7 +90,7 @@ export const CustomBottomNavBar = ({
         <View style={styles.tabSlot}>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => navigation.navigate('ganancias')}
+            onPress={() => goToTab('ganancias')}
             style={[
               styles.tabItem,
               isGananciasActive && styles.tabItemActive,

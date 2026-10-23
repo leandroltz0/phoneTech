@@ -36,6 +36,7 @@ let proyectosMock: Proyecto[] = [
       { id: 'm5', tipo: 'estado', descripcion: 'Estado: En reparación', fecha: '2025-10-20T10:00:00Z' },
     ],
     fechaCreacion: '2025-10-18T10:00:00Z',
+    unlockToolSupported: true,
   },
   {
     id: '2',
@@ -68,6 +69,7 @@ let proyectosMock: Proyecto[] = [
       { id: 'm10', tipo: 'estado', descripcion: 'Estado: En venta', fecha: '2026-10-08T16:00:00Z' },
     ],
     fechaCreacion: '2026-10-05T14:00:00Z',
+    unlockToolSupported: false,
   },
   {
     id: '3',
@@ -102,6 +104,7 @@ let proyectosMock: Proyecto[] = [
     ],
     fechaCreacion: '2026-09-20T09:00:00Z',
     fechaVenta: '2026-10-10T16:30:00Z',
+    unlockToolSupported: true,
   },
   {
     id: '4',
@@ -126,6 +129,7 @@ let proyectosMock: Proyecto[] = [
       { id: 'm18', tipo: 'diagnostico', descripcion: 'Diagnóstico agregado', fecha: '2026-10-14T11:30:00Z' },
     ],
     fechaCreacion: '2026-10-14T11:00:00Z',
+    unlockToolSupported: true,
   },
   {
     id: '5',
@@ -149,6 +153,7 @@ let proyectosMock: Proyecto[] = [
       { id: 'm20', tipo: 'diagnostico', descripcion: 'Diagnóstico agregado', fecha: '2026-10-16T08:15:00Z' },
     ],
     fechaCreacion: '2026-10-16T08:00:00Z',
+    unlockToolSupported: true,
   },
   {
     id: '6',
@@ -181,6 +186,7 @@ let proyectosMock: Proyecto[] = [
       { id: 'm25', tipo: 'estado', descripcion: 'Estado: En reparación', fecha: '2026-10-13T10:00:00Z' },
     ],
     fechaCreacion: '2026-10-12T15:00:00Z',
+    unlockToolSupported: false,
   },
 ];
 

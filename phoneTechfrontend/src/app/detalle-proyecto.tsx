@@ -16,16 +16,16 @@ import {
   obtenerProyectosMock,
   suscribirProyectosMock,
   actualizarEstadoProyectoMock,
-  actualizarDiagnosticoProyectoMock,
 } from '@/data/proyectosMock';
-import { EstadoProyecto, FallaDiagnostico } from '@/types/proyecto';
+import { EstadoProyecto } from '@/types/proyecto';
+import { verificarSoporteUnlockTool } from '@/data/dispositivosMock';
 import { DetalleIdentificacion } from '@/components/detalle-proyecto/DetalleIdentificacion';
+import { DetalleUnlockToolCard } from '@/components/detalle-proyecto/DetalleUnlockToolCard';
 import { DetalleResumenEconomico } from '@/components/detalle-proyecto/DetalleResumenEconomico';
 import { DetalleDiagnostico } from '@/components/detalle-proyecto/DetalleDiagnostico';
 import { DetalleEstadoCard } from '@/components/detalle-proyecto/DetalleEstadoCard';
 import { OpcionesProyectoSheet } from '@/components/detalle-proyecto/OpcionesProyectoSheet';
 import { CambiarEstadoSheet } from '@/components/detalle-proyecto/CambiarEstadoSheet';
-import { EditarDiagnosticoSheet } from '@/components/detalle-proyecto/EditarDiagnosticoSheet';
 
 const accionPorEstado: Record<
   EstadoProyecto,
@@ -43,7 +43,6 @@ export default function DetalleProyectoScreen() {
   const insets = useSafeAreaInsets();
   const [sheetVisible, setSheetVisible] = useState(false);
   const [cambiarEstadoVisible, setCambiarEstadoVisible] = useState(false);
-  const [editarDiagnosticoVisible, setEditarDiagnosticoVisible] = useState(false);
 
   // Sincronización reactiva con los proyectos mock
   const proyectos = useSyncExternalStore(
@@ -71,14 +70,6 @@ export default function DetalleProyectoScreen() {
     [proyecto]
   );
 
-  const handleGuardarDiagnostico = useCallback(
-    (nuevasFallas: FallaDiagnostico[]) => {
-      if (!proyecto) return;
-      actualizarDiagnosticoProyectoMock(proyecto.id, nuevasFallas);
-    },
-    [proyecto]
-  );
-
   const handleSelectOption = useCallback((optionId: string) => {
     setSheetVisible(false);
 
@@ -87,7 +78,10 @@ export default function DetalleProyectoScreen() {
         Alert.alert('Editar datos', `Editar datos de ${proyecto?.modelo}.`);
         break;
       case 'editar-diagnostico':
-        setEditarDiagnosticoVisible(true);
+        router.push({
+          pathname: '/editar-diagnostico',
+          params: { id: proyecto?.id },
+        });
         break;
       case 'modificar-precios':
         router.push({
@@ -155,6 +149,7 @@ export default function DetalleProyectoScreen() {
   }
 
   const accion = accionPorEstado[proyecto.estado];
+  const unlockToolSupported = verificarSoporteUnlockTool(proyecto);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -191,6 +186,7 @@ export default function DetalleProyectoScreen() {
         showsVerticalScrollIndicator={false}
       >
         <DetalleIdentificacion proyecto={proyecto} />
+        <DetalleUnlockToolCard supported={unlockToolSupported} />
         <DetalleResumenEconomico
           proyecto={proyecto}
           onEditar={() =>
@@ -200,7 +196,15 @@ export default function DetalleProyectoScreen() {
             })
           }
         />
-        <DetalleDiagnostico proyecto={proyecto} />
+        <DetalleDiagnostico
+          proyecto={proyecto}
+          onEditar={() =>
+            router.push({
+              pathname: '/editar-diagnostico',
+              params: { id: proyecto.id },
+            })
+          }
+        />
         <DetalleEstadoCard
           proyecto={proyecto}
           onCambiarEstado={() => setCambiarEstadoVisible(true)}

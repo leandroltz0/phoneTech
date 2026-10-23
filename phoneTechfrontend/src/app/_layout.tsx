@@ -45,6 +45,10 @@ export default function RootLayout() {
           name="modificar-precios"
           options={{ headerShown: false, animation: 'slide_from_right' }}
         />
+        <Stack.Screen
+          name="editar-diagnostico"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
+        />
       </Stack>
     </PaperProvider>
   );

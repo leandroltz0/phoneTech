@@ -1,20 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 type UnlockToolSupportBadgeProps = {
   supported: boolean;
+  style?: StyleProp<ViewStyle>;
 };
 
 /** Estado reutilizable de compatibilidad con UnlockTool para un dispositivo. */
-export function UnlockToolSupportBadge({ supported }: UnlockToolSupportBadgeProps) {
+export function UnlockToolSupportBadge({ supported, style }: UnlockToolSupportBadgeProps) {
   const label = supported ? 'Compatible con UnlockTool' : 'No compatible con UnlockTool';
 
   return (
     <View
       accessibilityLabel={label}
       accessibilityRole="text"
-      style={[styles.badge, supported ? styles.supportedBadge : styles.unsupportedBadge]}
+      style={[styles.badge, supported ? styles.supportedBadge : styles.unsupportedBadge, style]}
     >
       <Ionicons
         color={supported ? '#27866E' : '#718398'}

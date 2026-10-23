@@ -49,6 +49,7 @@ export default function GuardarProyectoScreen() {
       gananciaTipo: 'estimada',
       ganancia: proyectoPendienteMock.gananciaEstimada,
       fechaCreacion: new Date().toISOString(),
+      unlockToolSupported: dispositivo.unlockToolSupported,
     });
     router.replace('/(tabs)/proyectos');
   };

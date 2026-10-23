@@ -49,4 +49,5 @@ export interface Proyecto {
   movimientos?: MovimientoProyecto[];  // Historial de movimientos
   fechaCreacion: string;     // ISO string
   fechaVenta?: string;       // Solo si estado === 'vendido'
+  unlockToolSupported?: boolean;
 }

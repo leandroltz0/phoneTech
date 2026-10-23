@@ -1,23 +1,24 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { UnlockToolSupportBadge } from '@/components/dispositivos/UnlockToolSupportBadge';
 
 interface Props {
   supported: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 /**
  * Mini componente contenedor independiente para mostrar el soporte
  * de UnlockTool del dispositivo justo debajo del encabezado.
  */
-export const DetalleUnlockToolCard = ({ supported }: Props) => {
+export const DetalleUnlockToolCard = ({ supported, style }: Props) => {
   return (
     <View
       accessibilityLabel={`Soporte UnlockTool: ${supported ? 'Compatible' : 'Sin soporte'}`}
       accessibilityRole="summary"
-      style={styles.card}
+      style={[styles.card, style]}
     >
       <View style={styles.leftSection}>
         <View

@@ -19,7 +19,8 @@ import {
   COMPONENT_ISSUES,
   ComponentIssueSheet,
 } from '@/components/dispositivos/ModuleIssueSheet';
-import { dispositivosMock } from '@/data/dispositivosMock';
+import { DetalleUnlockToolCard } from '@/components/detalle-proyecto/DetalleUnlockToolCard';
+import { dispositivosMock, verificarSoporteUnlockTool } from '@/data/dispositivosMock';
 
 // ─── Categorías de fallas ────────────────────────────────────────────────────
 
@@ -110,6 +111,9 @@ export default function SeleccionarTelefonoScreen() {
         <Text style={styles.deviceName}>
           {dispositivo.marca} {dispositivo.modelo}
         </Text>
+
+        {/* ─── Soporte UnlockTool ─────────────────────────────────── */}
+        <DetalleUnlockToolCard supported={verificarSoporteUnlockTool(dispositivo)} />
 
         {/* ─── Card: Variante del dispositivo ─────────────────────── */}
         <TouchableOpacity

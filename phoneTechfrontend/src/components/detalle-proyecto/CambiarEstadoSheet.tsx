@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -73,20 +73,19 @@ const OPCIONES_ESTADO: EstadoOption[] = [
   },
 ];
 
-export const CambiarEstadoSheet = ({
-  visible,
+interface ContentProps {
+  estadoActual: EstadoProyecto;
+  onClose: () => void;
+  onGuardar: (nuevoEstado: EstadoProyecto) => void;
+}
+
+const CambiarEstadoSheetContent = ({
   estadoActual,
   onClose,
   onGuardar,
-}: Props) => {
+}: ContentProps) => {
   const insets = useSafeAreaInsets();
   const [seleccionado, setSeleccionado] = useState<EstadoProyecto>(estadoActual);
-
-  useEffect(() => {
-    if (visible) {
-      setSeleccionado(estadoActual);
-    }
-  }, [visible, estadoActual]);
 
   const handleGuardar = () => {
     onGuardar(seleccionado);
@@ -94,20 +93,14 @@ export const CambiarEstadoSheet = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable
-          style={[
-            styles.sheetContainer,
-            { paddingBottom: Math.max(insets.bottom, 20) },
-          ]}
-          onPress={(e) => e.stopPropagation()}
-        >
+    <Pressable style={styles.overlay} onPress={onClose}>
+      <Pressable
+        style={[
+          styles.sheetContainer,
+          { paddingBottom: Math.max(insets.bottom, 20) },
+        ]}
+        onPress={(e) => e.stopPropagation()}
+      >
           {/* Barra superior de arrastre */}
           <View style={styles.dragBar} />
 
@@ -199,6 +192,29 @@ export const CambiarEstadoSheet = ({
           </TouchableOpacity>
         </Pressable>
       </Pressable>
+  );
+};
+
+export const CambiarEstadoSheet = ({
+  visible,
+  estadoActual,
+  onClose,
+  onGuardar,
+}: Props) => {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      {visible && (
+        <CambiarEstadoSheetContent
+          estadoActual={estadoActual}
+          onClose={onClose}
+          onGuardar={onGuardar}
+        />
+      )}
     </Modal>
   );
 };

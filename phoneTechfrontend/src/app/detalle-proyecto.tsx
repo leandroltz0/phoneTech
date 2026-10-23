@@ -12,7 +12,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import {
-  obtenerProyectoPorIdMock,
   obtenerProyectosMock,
   suscribirProyectosMock,
   actualizarEstadoProyectoMock,

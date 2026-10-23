@@ -19,19 +19,8 @@ import {
   obtenerProyectosMock,
   actualizarPrecioProyectoMock,
 } from '@/data/proyectosMock';
-import { EstadoProyecto } from '@/types/proyecto';
-
-const estadoConfig: Record<
-  EstadoProyecto,
-  { label: string; bg: string; text: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
-  evaluacion: { label: 'En evaluación', ...Colors.estados.evaluacion, icon: 'time-outline' },
-  reparacion: { label: 'En reparación', ...Colors.estados.reparacion, icon: 'checkmark-circle' },
-  venta: { label: 'Listo para vender', bg: '#DFF1FC', text: '#246B96', icon: 'checkmark-circle' },
-  vendido: { label: 'Vendido', ...Colors.estados.vendido, icon: 'checkmark-done-circle' },
-};
-
-const formatPeso = (n: number) => `$ ${n.toLocaleString('es-AR')}`;
+import { ESTADO_CONFIG } from '@/constants/estados';
+import { formatPeso } from '@/utils/formatters';
 
 export default function ModificarPreciosScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -92,7 +81,7 @@ export default function ModificarPreciosScreen() {
     );
   }
 
-  const estado = estadoConfig[proyecto.estado];
+  const estado = ESTADO_CONFIG[proyecto.estado];
 
   const imageSource =
     proyecto.modelo.includes('A03')

@@ -3,16 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Proyecto } from '@/types/proyecto';
+import { formatPeso } from '@/utils/formatters';
 
 interface Props {
   proyecto: Proyecto;
   onEditar?: () => void;
 }
-
-const formatPeso = (n: number | undefined) => {
-  if (n === undefined || n === null) return '—';
-  return `$${n.toLocaleString('es-AR')}`;
-};
 
 export const DetalleResumenEconomico = ({ proyecto, onEditar }: Props) => {
   const [expandido, setExpandido] = useState(false);

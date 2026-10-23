@@ -2,37 +2,25 @@ import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { Card } from 'react-native-paper';
 import { Colors } from '@/constants/colors';
-import { Proyecto, EstadoProyecto } from '@/types/proyecto';
+import { ESTADO_CONFIG } from '@/constants/estados';
+import { Proyecto } from '@/types/proyecto';
+import { formatNumeroProyecto, formatPeso } from '@/utils/formatters';
 
 interface Props {
   proyecto: Proyecto;
   onPress?: () => void;
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-const formatNumero = (n: number) => `PROYECTO #${String(n).padStart(3, '0')}`;
-
-const formatPeso = (n: number) =>
-  `$${n.toLocaleString('es-AR')}`;
-
-const estadoConfig: Record<EstadoProyecto, { label: string; bg: string; text: string }> = {
-  evaluacion: { label: 'En evaluación', ...Colors.estados.evaluacion },
-  reparacion: { label: 'En reparación', ...Colors.estados.reparacion },
-  venta: { label: 'En venta', ...Colors.estados.venta },
-  vendido: { label: 'Vendido', ...Colors.estados.vendido },
-};
-
 // ─── Componente ──────────────────────────────────────────────────────────────
 
 export const ProyectoCard = ({ proyecto, onPress }: Props) => {
-  const { label, bg, text } = estadoConfig[proyecto.estado];
+  const { label, bg, text } = ESTADO_CONFIG[proyecto.estado];
 
   return (
     <Card style={styles.card} onPress={onPress}>
       {/* Número de proyecto */}
       <View style={styles.header}>
-        <Text style={styles.numero}>{formatNumero(proyecto.numero)}</Text>
+        <Text style={styles.numero}>{formatNumeroProyecto(proyecto.numero, true)}</Text>
       </View>
 
       {/* Contenido principal: imagen + info */}

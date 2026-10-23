@@ -2,26 +2,16 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { Proyecto, EstadoProyecto } from '@/types/proyecto';
+import { ESTADO_CONFIG } from '@/constants/estados';
+import { Proyecto } from '@/types/proyecto';
+import { formatNumeroProyecto } from '@/utils/formatters';
 
 interface Props {
   proyecto: Proyecto;
 }
 
-const estadoConfig: Record<
-  EstadoProyecto,
-  { label: string; bg: string; text: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
-  evaluacion: { label: 'En evaluación', ...Colors.estados.evaluacion, icon: 'time-outline' },
-  reparacion: { label: 'En reparación', ...Colors.estados.reparacion, icon: 'construct-outline' },
-  venta: { label: 'En venta', ...Colors.estados.venta, icon: 'pricetag-outline' },
-  vendido: { label: 'Vendido', ...Colors.estados.vendido, icon: 'checkmark-done-circle' },
-};
-
-const formatNumero = (n: number) => `Proyecto #${String(n).padStart(3, '0')}`;
-
 export const EditorIdentificacion = ({ proyecto }: Props) => {
-  const estado = estadoConfig[proyecto.estado];
+  const estado = ESTADO_CONFIG[proyecto.estado];
 
   const imageSource =
     proyecto.modelo.includes('A03')
@@ -50,7 +40,7 @@ export const EditorIdentificacion = ({ proyecto }: Props) => {
             </Text>
           )}
 
-          <Text style={styles.numero}>{formatNumero(proyecto.numero)}</Text>
+          <Text style={styles.numero}>{formatNumeroProyecto(proyecto.numero)}</Text>
 
           <View style={[styles.estadoBadge, { backgroundColor: estado.bg }]}>
             <Ionicons

@@ -2,38 +2,16 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { Proyecto, EstadoProyecto } from '@/types/proyecto';
+import { ESTADO_CONFIG } from '@/constants/estados';
+import { Proyecto } from '@/types/proyecto';
+import { formatFecha, formatNumeroProyecto } from '@/utils/formatters';
 
 interface Props {
   proyecto: Proyecto;
 }
 
-const formatNumero = (n: number) => `Proyecto #${String(n).padStart(3, '0')}`;
-
-const formatFecha = (iso: string) => {
-  const d = new Date(iso);
-  const dia = d.getUTCDate();
-  const meses = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-  ];
-  const mes = meses[d.getUTCMonth()];
-  const anio = d.getUTCFullYear();
-  return `Creado el ${dia} de ${mes} de ${anio}`;
-};
-
-const estadoConfig: Record<
-  EstadoProyecto,
-  { label: string; bg: string; text: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
-  evaluacion: { label: 'En evaluación', ...Colors.estados.evaluacion, icon: 'time-outline' },
-  reparacion: { label: 'En reparación', ...Colors.estados.reparacion, icon: 'checkmark-circle' },
-  venta: { label: 'En venta', ...Colors.estados.venta, icon: 'pricetag-outline' },
-  vendido: { label: 'Vendido', ...Colors.estados.vendido, icon: 'checkmark-done-circle' },
-};
-
 export const DetalleIdentificacion = ({ proyecto }: Props) => {
-  const estado = estadoConfig[proyecto.estado];
+  const estado = ESTADO_CONFIG[proyecto.estado];
 
   const imageSource =
     proyecto.modelo.includes('A03')
@@ -73,7 +51,7 @@ export const DetalleIdentificacion = ({ proyecto }: Props) => {
           </View>
 
           <Text style={styles.projectInfo}>
-            {formatNumero(proyecto.numero)}
+            {formatNumeroProyecto(proyecto.numero)}
           </Text>
           <Text style={styles.fecha}>
             {formatFecha(proyecto.fechaCreacion)}

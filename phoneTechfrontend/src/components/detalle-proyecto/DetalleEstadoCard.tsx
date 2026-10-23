@@ -2,25 +2,16 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { Proyecto, EstadoProyecto } from '@/types/proyecto';
+import { ESTADO_CONFIG } from '@/constants/estados';
+import { Proyecto } from '@/types/proyecto';
 
 interface Props {
   proyecto: Proyecto;
   onCambiarEstado: () => void;
 }
 
-const estadoConfig: Record<
-  EstadoProyecto,
-  { label: string; bg: string; text: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
-  evaluacion: { label: 'En evaluación', ...Colors.estados.evaluacion, icon: 'time-outline' },
-  reparacion: { label: 'En reparación', ...Colors.estados.reparacion, icon: 'checkmark-circle' },
-  venta: { label: 'En venta', ...Colors.estados.venta, icon: 'pricetag-outline' },
-  vendido: { label: 'Vendido', ...Colors.estados.vendido, icon: 'checkmark-done-circle' },
-};
-
 export const DetalleEstadoCard = ({ proyecto, onCambiarEstado }: Props) => {
-  const estado = estadoConfig[proyecto.estado];
+  const estado = ESTADO_CONFIG[proyecto.estado];
 
   return (
     <View style={styles.card}>

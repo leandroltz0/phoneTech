@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useSyncExternalStore, useMemo } from 'react';
+import React, { useState, useCallback, useSyncExternalStore, useMemo } from 'react';
 import {
   View,
   Text,
@@ -62,10 +62,6 @@ export default function EditarDiagnosticoScreen() {
   }, [proyecto]);
 
   const [fallas, setFallas] = useState<FallaDiagnostico[]>(initialFallas);
-
-  useEffect(() => {
-    setFallas(initialFallas);
-  }, [initialFallas]);
   const [componenteSeleccionado, setComponenteSeleccionado] = useState<string | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
 

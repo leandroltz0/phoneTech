@@ -2,38 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { getIconForComponente } from '@/constants/componentes';
 import { Proyecto, FallaDiagnostico } from '@/types/proyecto';
 
 interface Props {
   proyecto: Proyecto;
   onEditar?: () => void;
 }
-
-const getIconForComponente = (componente: string): keyof typeof Ionicons.glyphMap => {
-  const comp = componente.toLowerCase();
-  if (comp.includes('módulo') || comp.includes('modulo') || comp.includes('pantalla') || comp.includes('display')) {
-    return 'phone-portrait-outline';
-  }
-  if (comp.includes('tapa') || comp.includes('carcasa') || comp.includes('marco')) {
-    return 'tablet-portrait-outline';
-  }
-  if (comp.includes('pin') || comp.includes('carga')) {
-    return 'battery-charging-outline';
-  }
-  if (comp.includes('batería') || comp.includes('bateria')) {
-    return 'battery-dead-outline';
-  }
-  if (comp.includes('cámara') || comp.includes('camara') || comp.includes('lente')) {
-    return 'camera-outline';
-  }
-  if (comp.includes('botón') || comp.includes('boton') || comp.includes('power')) {
-    return 'power-outline';
-  }
-  if (comp.includes('placa') || comp.includes('humedad') || comp.includes('corto')) {
-    return 'hardware-chip-outline';
-  }
-  return 'construct-outline';
-};
 
 export const DetalleDiagnostico = ({ proyecto, onEditar }: Props) => {
   const [modalVisible, setModalVisible] = useState(false);

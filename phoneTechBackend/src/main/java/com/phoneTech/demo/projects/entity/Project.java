@@ -11,7 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "projects")
@@ -22,29 +22,20 @@ public class Project {
     private Long id;
 
     @Column(name = "project_number", nullable = false)
-    private Integer projectNumber;
+    private Long projectNumber;
 
-    @Column(name = "phone_model", nullable = false)
+    @Column(name = "phone_model", nullable = false, length = 150)
     private String phoneModel;
 
-    @Column
-    private String variant;
-
-    @Column(columnDefinition = "TEXT")
-    private String diagnosis;
-
-    @Column(name = "estimated_profit", precision = 19, scale = 2, nullable = false)
+    @Column(name = "estimated_profit", precision = 14, scale = 2)
     private BigDecimal estimatedProfit;
 
-    @Column(name = "actual_profit", precision = 19, scale = 2)
-    private BigDecimal actualProfit;
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private ProjectStatus status;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     protected Project() {
     }
@@ -53,7 +44,7 @@ public class Project {
         return id;
     }
 
-    public Integer getProjectNumber() {
+    public Long getProjectNumber() {
         return projectNumber;
     }
 
@@ -61,27 +52,15 @@ public class Project {
         return phoneModel;
     }
 
-    public String getVariant() {
-        return variant;
-    }
-
-    public String getDiagnosis() {
-        return diagnosis;
-    }
-
     public BigDecimal getEstimatedProfit() {
         return estimatedProfit;
-    }
-
-    public BigDecimal getActualProfit() {
-        return actualProfit;
     }
 
     public ProjectStatus getStatus() {
         return status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 }

@@ -3,17 +3,16 @@ package com.phoneTech.demo.projects.dto;
 import com.phoneTech.demo.projects.enums.ProjectStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.List;
 
-public record ProjectResponse(
+public record ProjectDetailResponse(
         Long id,
-        Integer projectNumber,
+        Long projectNumber,
         String phoneModel,
-        String variant,
-        String diagnosis,
         BigDecimal estimatedProfit,
-        BigDecimal actualProfit,
         ProjectStatus status,
-        LocalDateTime createdAt
+        Instant createdAt,
+        List<ProjectFaultResponse> diagnosis
 ) {
 }

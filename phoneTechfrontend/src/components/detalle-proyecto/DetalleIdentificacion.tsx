@@ -13,10 +13,9 @@ interface Props {
 export const DetalleIdentificacion = ({ proyecto }: Props) => {
   const estado = ESTADO_CONFIG[proyecto.estado];
 
-  const imageSource =
-    proyecto.modelo.includes('A03')
-      ? require('@/assets/images/phone-preview-a03.png')
-      : { uri: proyecto.imagen };
+  const imageSource = proyecto.imagen
+    ? { uri: proyecto.imagen }
+    : require('@/assets/images/phone-preview-a03.png');
 
   return (
     <View style={styles.card}>
@@ -53,9 +52,11 @@ export const DetalleIdentificacion = ({ proyecto }: Props) => {
           <Text style={styles.projectInfo}>
             {formatNumeroProyecto(proyecto.numero)}
           </Text>
-          <Text style={styles.fecha}>
-            {formatFecha(proyecto.fechaCreacion)}
-          </Text>
+          {proyecto.fechaCreacion && (
+            <Text style={styles.fecha}>
+              {formatFecha(proyecto.fechaCreacion)}
+            </Text>
+          )}
         </View>
       </View>
     </View>

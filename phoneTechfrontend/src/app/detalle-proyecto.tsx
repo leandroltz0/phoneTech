@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useSyncExternalStore } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,16 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import {
-  obtenerProyectosMock,
-  suscribirProyectosMock,
-  actualizarEstadoProyectoMock,
-} from '@/data/proyectosMock';
+import { useProyectoDetalle } from '@/hooks/useProyectoDetalle';
 import { EstadoProyecto } from '@/types/proyecto';
 import { verificarSoporteUnlockTool } from '@/data/dispositivosMock';
 import { DetalleIdentificacion } from '@/components/detalle-proyecto/DetalleIdentificacion';
@@ -43,15 +40,8 @@ export default function DetalleProyectoScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [cambiarEstadoVisible, setCambiarEstadoVisible] = useState(false);
 
-  // Sincronización reactiva con los proyectos mock
-  const proyectos = useSyncExternalStore(
-    suscribirProyectosMock,
-    obtenerProyectosMock,
-    obtenerProyectosMock
-  );
-
-  const proyecto =
-    (id ? proyectos.find((p) => p.id === id) : undefined) ?? proyectos[0];
+  // Carga del proyecto desde la API (detalle + imágenes en paralelo)
+  const { proyecto, cargando, error, refrescar, cambiarEstadoLocal } = useProyectoDetalle(id);
 
   const handleBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -64,9 +54,10 @@ export default function DetalleProyectoScreen() {
   const handleGuardarEstado = useCallback(
     (nuevoEstado: EstadoProyecto) => {
       if (!proyecto) return;
-      actualizarEstadoProyectoMock(proyecto.id, nuevoEstado);
+      // Cambio optimista local: el backend todavía no expone PUT de estado.
+      cambiarEstadoLocal(nuevoEstado);
     },
-    [proyecto]
+    [proyecto, cambiarEstadoLocal]
   );
 
   const handleSelectOption = useCallback((optionId: string) => {
@@ -129,6 +120,23 @@ export default function DetalleProyectoScreen() {
     );
   }, [proyecto]);
 
+  if (cargando && !proyecto) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        <View style={styles.headerBar}>
+          <TouchableOpacity onPress={handleBack} style={styles.headerBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={24} color={Colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Detalle del proyecto</Text>
+          <View style={styles.headerBtn} />
+        </View>
+        <View style={styles.notFound}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!proyecto) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -141,7 +149,12 @@ export default function DetalleProyectoScreen() {
         </View>
         <View style={styles.notFound}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textSecondary} />
-          <Text style={styles.notFoundText}>No se encontró el proyecto seleccionado.</Text>
+          <Text style={styles.notFoundText}>
+            {error ?? 'No se encontró el proyecto seleccionado.'}
+          </Text>
+          <TouchableOpacity style={styles.reintentarBtn} onPress={() => void refrescar()} activeOpacity={0.8}>
+            <Text style={styles.reintentarText}>Reintentar</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -327,5 +340,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textSecondary,
     textAlign: 'center',
+  },
+  reintentarBtn: {
+    marginTop: 4,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  reintentarText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

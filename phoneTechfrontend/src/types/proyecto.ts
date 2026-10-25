@@ -47,7 +47,7 @@ export interface Proyecto {
   gastos?: GastoRegistrado[];    // Gastos detallados
   totalGastos?: number;          // Suma de todos los gastos
   movimientos?: MovimientoProyecto[];  // Historial de movimientos
-  fechaCreacion: string;     // ISO string
+  fechaCreacion?: string;    // ISO string (opcional: el listado no la trae)
   fechaVenta?: string;       // Solo si estado === 'vendido'
   unlockToolSupported?: boolean;
 }

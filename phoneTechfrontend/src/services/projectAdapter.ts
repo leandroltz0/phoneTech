@@ -1,0 +1,84 @@
+import { getIconForComponente } from '@/constants/componentes';
+import type { ProjectDetailDto, ProjectStatusDto, ProjectSummaryDto } from '@/types/api';
+import type { EstadoProyecto, FallaDiagnostico, Proyecto } from '@/types/proyecto';
+import { urlImagen } from './projects';
+
+/** Estado del backend → estado del dominio de la app. */
+const ESTADO: Record<ProjectStatusDto, EstadoProyecto> = {
+  PENDING: 'evaluacion',
+  IN_REPAIR: 'reparacion',
+  READY_TO_SELL: 'venta',
+  FOR_SALE: 'venta',
+  SOLD: 'vendido',
+};
+
+/** GET /api/v1/projects → Proyecto (sin imagen: el listado no la trae para evitar N+1). */
+export function adaptarProyectoResumen(resumen: ProjectSummaryDto): Proyecto {
+  return {
+    ...crearBase(resumen.id, resumen.projectNumber, resumen.phoneModel, resumen.status, resumen.estimatedProfit),
+    imagen: '',
+    diagnostico: partirDiagnostico(resumen.diagnosis),
+    gananciaTipo: resumen.status === 'SOLD' ? 'real' : 'estimada',
+  };
+}
+
+/** GET /api/v1/projects/{id} + GET .../images → Proyecto completo. */
+export function adaptarProyectoDetalle(
+  detalle: ProjectDetailDto,
+  imagenes: { url: string }[]
+): Proyecto {
+  const fallas: FallaDiagnostico[] = detalle.diagnosis.map((fallo) => ({
+    id: `${fallo.componentCode}-${fallo.faultCode}`,
+    componente: fallo.componentName,
+    descripcion: [fallo.faultName, fallo.description].filter(Boolean).join(' · '),
+    icono: getIconForComponente(fallo.componentName),
+    confirmada: fallo.confirmed,
+  }));
+
+  return {
+    ...crearBase(
+      detalle.id,
+      detalle.projectNumber,
+      detalle.phoneModel,
+      detalle.status,
+      detalle.estimatedProfit
+    ),
+    imagen: imagenes.length > 0 ? urlImagen(imagenes[0].url) : '',
+    diagnostico: fallas.map((f) => `${f.componente} ${f.descripcion}`),
+    fallas,
+    fechaCreacion: detalle.createdAt,
+    gananciaTipo: detalle.status === 'SOLD' ? 'real' : 'estimada',
+  };
+}
+
+function crearBase(
+  id: number,
+  numero: number,
+  modelo: string,
+  status: ProjectStatusDto,
+  ganancia: number | null
+): Omit<Proyecto, 'imagen' | 'gananciaTipo'> {
+  return {
+    id: String(id),
+    numero,
+    modelo,
+    marca: extraerMarca(modelo),
+    diagnostico: [],
+    estado: ESTADO[status],
+    ganancia: ganancia ?? 0,
+  };
+}
+
+/** El diagnóstico del resumen viene como `"Módulo roto, Tapa dañada"`. */
+function partirDiagnostico(diagnosis: string): string[] {
+  if (!diagnosis.trim()) return [];
+  return diagnosis
+    .split(', ')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function extraerMarca(phoneModel: string): string {
+  const [primeraPalabra] = phoneModel.trim().split(' ');
+  return primeraPalabra ?? '';
+}

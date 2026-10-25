@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { Card } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { ESTADO_CONFIG } from '@/constants/estados';
 import { Proyecto } from '@/types/proyecto';
@@ -25,11 +26,17 @@ export const ProyectoCard = ({ proyecto, onPress }: Props) => {
 
       {/* Contenido principal: imagen + info */}
       <View style={styles.body}>
-        <Image
-          source={{ uri: proyecto.imagen }}
-          style={styles.imagen}
-          resizeMode="contain"
-        />
+        {proyecto.imagen ? (
+          <Image
+            source={{ uri: proyecto.imagen }}
+            style={styles.imagen}
+            resizeMode="contain"
+          />
+        ) : (
+          <View style={[styles.imagen, styles.imagenVacia]}>
+            <Ionicons name="phone-portrait-outline" size={30} color={Colors.textSecondary} />
+          </View>
+        )}
 
         <View style={styles.info}>
           <Text style={styles.modelo} numberOfLines={1}>
@@ -44,7 +51,9 @@ export const ProyectoCard = ({ proyecto, onPress }: Props) => {
           <Text style={styles.diagnosticoLabel}>
             Diagnóstico:{' '}
             <Text style={styles.diagnosticoValor}>
-              {proyecto.diagnostico.join(', ')}
+              {proyecto.diagnostico.length > 0
+                ? proyecto.diagnostico.join(', ')
+                : 'Sin diagnóstico'}
             </Text>
           </Text>
         </View>
@@ -104,6 +113,12 @@ const styles = StyleSheet.create({
     height: 88,
     borderRadius: 10,
     backgroundColor: Colors.background,
+  },
+  imagenVacia: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   info: {
     flex: 1,

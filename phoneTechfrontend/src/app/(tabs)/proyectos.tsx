@@ -1,14 +1,17 @@
-import React, { useMemo, useState, useSyncExternalStore } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
-import { obtenerProyectosMock, suscribirProyectosMock } from '@/data/proyectosMock';
+import { useProyectos } from '@/hooks/useProyectos';
 import { ProyectoCard } from '@/components/proyectos/ProyectoCard';
 import { ProyectosSearch } from '@/components/proyectos/ProyectosSearch';
 import { ProyectosFilters, FiltroProyecto } from '@/components/proyectos/ProyectosFilters';
@@ -18,10 +21,10 @@ export default function ProyectosScreen() {
   const router = useRouter();
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<FiltroProyecto>('todos');
-  const proyectosMock = useSyncExternalStore(suscribirProyectosMock, obtenerProyectosMock, obtenerProyectosMock);
+  const { proyectos, cargando, error, refrescar } = useProyectos();
 
   const proyectosFiltrados = useMemo(() => {
-    return proyectosMock.filter((p: Proyecto) => {
+    return proyectos.filter((p: Proyecto) => {
       const coincideBusqueda =
         busqueda.trim() === '' ||
         p.modelo.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -31,7 +34,34 @@ export default function ProyectosScreen() {
 
       return coincideBusqueda && coincideFiltro;
     });
-  }, [busqueda, filtro, proyectosMock]);
+  }, [busqueda, filtro, proyectos]);
+
+  const onRefresh = useCallback(() => {
+    void refrescar();
+  }, [refrescar]);
+
+  const renderVacio = () => {
+    if (cargando && proyectos.length === 0) {
+      return <ActivityIndicator size="large" color={Colors.primary} style={styles.vacioSpinner} />;
+    }
+
+    if (error) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>{error}</Text>
+          <TouchableOpacity style={styles.reintentarBtn} onPress={onRefresh} activeOpacity={0.8}>
+            <Text style={styles.reintentarText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No hay proyectos que coincidan.</Text>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -49,6 +79,13 @@ export default function ProyectosScreen() {
             }
           />
         )}
+        refreshControl={
+          <RefreshControl
+            refreshing={cargando && proyectos.length > 0}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+          />
+        }
         ListHeaderComponent={
           <View>
             {/* Encabezado */}
@@ -59,7 +96,7 @@ export default function ProyectosScreen() {
               </View>
               <View style={styles.contador}>
                 <Text style={styles.contadorText}>
-                  {proyectosMock.length} proyectos
+                  {proyectos.length} proyectos
                 </Text>
               </View>
             </View>
@@ -73,11 +110,7 @@ export default function ProyectosScreen() {
             <View style={styles.listSpacer} />
           </View>
         }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No hay proyectos que coincidan.</Text>
-          </View>
-        }
+        ListEmptyComponent={renderVacio()}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       />
@@ -133,5 +166,22 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: Colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+  vacioSpinner: {
+    marginTop: 48,
+  },
+  reintentarBtn: {
+    marginTop: 16,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  reintentarText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

@@ -37,6 +37,7 @@ class ProjectServiceTest {
         when(firstRow.getPhoneModel()).thenReturn("Samsung Galaxy A03");
         when(firstRow.getEstimatedProfit()).thenReturn(new BigDecimal("25000.00"));
         when(firstRow.getDiagnosis()).thenReturn("Módulo: Módulo roto");
+        when(firstRow.getImageUrl()).thenReturn("/uploads/a03.jpg");
         when(firstRow.getStatus()).thenReturn(ProjectStatus.PENDING.name());
 
         ProjectSummaryRow secondRow = mock(ProjectSummaryRow.class);
@@ -54,10 +55,10 @@ class ProjectServiceTest {
         assertThat(response).hasSize(2);
         assertThat(response.get(0)).isEqualTo(new ProjectSummaryResponse(
                 1L, 1L, "Samsung Galaxy A03", new BigDecimal("25000.00"),
-                "Módulo: Módulo roto", ProjectStatus.PENDING));
+                "Módulo: Módulo roto", "/uploads/a03.jpg", ProjectStatus.PENDING));
         assertThat(response.get(1)).isEqualTo(new ProjectSummaryResponse(
                 2L, 2L, "Motorola Moto E13", new BigDecimal("18000.00"),
-                "", ProjectStatus.SOLD));
+                "", null, ProjectStatus.SOLD));
     }
 
     @Test

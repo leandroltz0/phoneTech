@@ -50,6 +50,7 @@ class ProjectControllerTest {
                         "Samsung Galaxy A03",
                         new BigDecimal("25000.00"),
                         "Módulo: Módulo roto, Tapa: Tapa dañada",
+                        "/uploads/a03.jpg",
                         ProjectStatus.PENDING
                 )
         ));
@@ -63,6 +64,7 @@ class ProjectControllerTest {
                           "phoneModel": "Samsung Galaxy A03",
                           "estimatedProfit": 25000.00,
                           "diagnosis": "Módulo: Módulo roto, Tapa: Tapa dañada",
+                          "imageUrl": "/uploads/a03.jpg",
                           "status": "PENDING"
                         }]
                         """, true));

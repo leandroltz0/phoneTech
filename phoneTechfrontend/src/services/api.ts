@@ -4,7 +4,9 @@
  * para que los servicios de dominio solo expresen la petición.
  */
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.1.50:8080';
+export const API_URL = (
+  process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.1.50:8080'
+).replace(/\/+$/, '');
 
 /** Error de comunicación con el backend. `status === 0` significa sin conexión. */
 export class ApiError extends Error {

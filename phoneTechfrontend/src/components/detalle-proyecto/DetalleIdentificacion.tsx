@@ -5,6 +5,7 @@ import { Colors } from '@/constants/colors';
 import { ESTADO_CONFIG } from '@/constants/estados';
 import { Proyecto } from '@/types/proyecto';
 import { formatFecha, formatNumeroProyecto } from '@/utils/formatters';
+import { resolverImagenProyecto } from '@/utils/images';
 
 interface Props {
   proyecto: Proyecto;
@@ -13,9 +14,9 @@ interface Props {
 export const DetalleIdentificacion = ({ proyecto }: Props) => {
   const estado = ESTADO_CONFIG[proyecto.estado];
 
-  const imageSource = proyecto.imagen
-    ? { uri: proyecto.imagen }
-    : require('@/assets/images/phone-preview-a03.png');
+  const imageSource =
+    resolverImagenProyecto(proyecto.modelo, proyecto.imagen) ??
+    require('@/assets/images/phone-preview-a03.png');
 
   return (
     <View style={styles.card}>

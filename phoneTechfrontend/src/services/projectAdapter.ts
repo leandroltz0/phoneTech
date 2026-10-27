@@ -12,11 +12,11 @@ const ESTADO: Record<ProjectStatusDto, EstadoProyecto> = {
   SOLD: 'vendido',
 };
 
-/** GET /api/v1/projects → Proyecto (sin imagen: el listado no la trae para evitar N+1). */
+/** GET /api/v1/projects → Proyecto con su imagen principal, si tiene. */
 export function adaptarProyectoResumen(resumen: ProjectSummaryDto): Proyecto {
   return {
     ...crearBase(resumen.id, resumen.projectNumber, resumen.phoneModel, resumen.status, resumen.estimatedProfit),
-    imagen: '',
+    imagen: resumen.imageUrl ? urlImagen(resumen.imageUrl) : '',
     diagnostico: partirDiagnostico(resumen.diagnosis),
     gananciaTipo: resumen.status === 'SOLD' ? 'real' : 'estimada',
   };

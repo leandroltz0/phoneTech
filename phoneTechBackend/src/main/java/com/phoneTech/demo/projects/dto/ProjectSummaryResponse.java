@@ -10,6 +10,7 @@ public record ProjectSummaryResponse(
         String phoneModel,
         BigDecimal estimatedProfit,
         String diagnosis,
+        String imageUrl,
         ProjectStatus status
 ) {
 }

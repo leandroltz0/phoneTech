@@ -18,6 +18,7 @@ export interface ProjectSummaryDto {
   phoneModel: string;
   estimatedProfit: number | null;
   diagnosis: string;
+  imageUrl: string | null;
   status: ProjectStatusDto;
 }
 

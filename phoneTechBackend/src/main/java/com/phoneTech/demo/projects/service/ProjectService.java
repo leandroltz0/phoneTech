@@ -60,6 +60,7 @@ public class ProjectService {
                 row.getPhoneModel(),
                 row.getEstimatedProfit(),
                 row.getDiagnosis(),
+                row.getImageUrl(),
                 toStatus(row.getStatus())
         );
     }

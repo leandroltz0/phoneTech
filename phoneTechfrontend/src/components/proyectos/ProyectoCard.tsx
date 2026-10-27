@@ -6,6 +6,7 @@ import { Colors } from '@/constants/colors';
 import { ESTADO_CONFIG } from '@/constants/estados';
 import { Proyecto } from '@/types/proyecto';
 import { formatNumeroProyecto, formatPeso } from '@/utils/formatters';
+import { resolverImagenProyecto } from '@/utils/images';
 
 interface Props {
   proyecto: Proyecto;
@@ -16,6 +17,7 @@ interface Props {
 
 export const ProyectoCard = ({ proyecto, onPress }: Props) => {
   const { label, bg, text } = ESTADO_CONFIG[proyecto.estado];
+  const imageSource = resolverImagenProyecto(proyecto.modelo, proyecto.imagen);
 
   return (
     <Card style={styles.card} onPress={onPress}>
@@ -26,9 +28,9 @@ export const ProyectoCard = ({ proyecto, onPress }: Props) => {
 
       {/* Contenido principal: imagen + info */}
       <View style={styles.body}>
-        {proyecto.imagen ? (
+        {imageSource ? (
           <Image
-            source={{ uri: proyecto.imagen }}
+            source={imageSource}
             style={styles.imagen}
             resizeMode="contain"
           />

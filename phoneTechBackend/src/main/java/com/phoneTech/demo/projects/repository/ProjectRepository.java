@@ -17,6 +17,13 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
                 p.project_number AS "projectNumber",
                 p.phone_model AS "phoneModel",
                 p.estimated_profit AS "estimatedProfit",
+                (
+                    SELECT '/uploads/' || pi.file_name
+                    FROM project_images pi
+                    WHERE pi.project_id = p.id
+                    ORDER BY pi.sort_order, pi.created_at, pi.id
+                    LIMIT 1
+                ) AS "imageUrl",
                 p.status AS "status",
                 COALESCE(
                     STRING_AGG(
@@ -74,6 +81,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
         String getPhoneModel();
 
         BigDecimal getEstimatedProfit();
+
+        String getImageUrl();
 
         String getStatus();
 

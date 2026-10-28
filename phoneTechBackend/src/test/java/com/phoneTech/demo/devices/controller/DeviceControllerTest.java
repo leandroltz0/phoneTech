@@ -6,20 +6,26 @@ import com.phoneTech.demo.devices.dto.DeviceSummaryResponse;
 import com.phoneTech.demo.devices.enums.UnlockToolSupportStatus;
 import com.phoneTech.demo.devices.exception.DeviceNotFoundException;
 import com.phoneTech.demo.devices.service.DeviceService;
+import com.phoneTech.demo.projects.exception.InvalidImageException;
 import com.phoneTech.demo.projects.exception.RestExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -100,5 +106,45 @@ class DeviceControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.detail").value("Device not found: 999"));
+    }
+
+    @Test
+    void uploadsDeviceImageSuccessfully() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "galaxy-a03.png", "image/png",
+                "dummy-image-bytes".getBytes(StandardCharsets.UTF_8));
+        when(deviceService.uploadImage(eq(1L), any())).thenReturn(new DeviceDetailResponse(
+                1L, "Samsung", "Galaxy A03", "/uploads/uuid.png", UnlockToolSupportStatus.SUPPORTED));
+
+        mockMvc.perform(multipart("/api/v1/devices/1/image").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.brand").value("Samsung"))
+                .andExpect(jsonPath("$.commercialName").value("Galaxy A03"))
+                .andExpect(jsonPath("$.imageUri").value("/uploads/uuid.png"))
+                .andExpect(jsonPath("$.unlockToolStatus").value("SUPPORTED"));
+    }
+
+    @Test
+    void returnsNotFoundWhenUploadingImageForNonExistentDevice() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "phone.jpg", "image/jpeg",
+                "bytes".getBytes(StandardCharsets.UTF_8));
+        when(deviceService.uploadImage(eq(999L), any())).thenThrow(new DeviceNotFoundException(999L));
+
+        mockMvc.perform(multipart("/api/v1/devices/999/image").file(file))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("Device not found: 999"));
+    }
+
+    @Test
+    void returnsBadRequestWhenImageIsInvalid() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "bad.txt", "text/plain",
+                "bytes".getBytes(StandardCharsets.UTF_8));
+        when(deviceService.uploadImage(eq(1L), any())).thenThrow(new InvalidImageException("Unsupported image type: text/plain"));
+
+        mockMvc.perform(multipart("/api/v1/devices/1/image").file(file))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").value("Unsupported image type: text/plain"));
     }
 }

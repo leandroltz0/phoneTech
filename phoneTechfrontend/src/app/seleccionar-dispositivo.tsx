@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
+  Image,
   ListRenderItem,
   StyleSheet,
   Text,
@@ -13,47 +15,47 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
 import { UnlockToolSupportBadge } from '@/components/dispositivos/UnlockToolSupportBadge';
-import { dispositivosMock, DispositivoMock } from '@/data/dispositivosMock';
-
-function PhonePreview({ dispositivo }: { dispositivo: DispositivoMock }) {
-  return (
-    <View
-      style={[
-        styles.phonePreview,
-        { backgroundColor: dispositivo.color, borderColor: dispositivo.colorOscuro },
-      ]}
-    >
-      <View style={[styles.phoneSpeaker, { backgroundColor: dispositivo.colorOscuro }]} />
-      <View style={[styles.cameraRing, { borderColor: dispositivo.colorOscuro }]}>
-        <View style={[styles.cameraLens, { backgroundColor: dispositivo.colorOscuro }]} />
-      </View>
-      <View style={[styles.cameraLens, styles.lowerLens, { backgroundColor: dispositivo.colorOscuro }]} />
-    </View>
-  );
-}
+import { mensajeDeError } from '@/services/api';
+import { obtenerDispositivos, urlImagenDispositivo } from '@/services/devices';
+import type { DeviceSummaryDto } from '@/types/api';
+import { resolverImagenProyecto } from '@/utils/images';
 
 export default function SeleccionarDispositivoScreen() {
   const [busqueda, setBusqueda] = useState('');
-  const [dispositivoSeleccionado, setDispositivoSeleccionado] = useState<string | null>(null);
+  const [dispositivos, setDispositivos] = useState<DeviceSummaryDto[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dispositivoSeleccionado, setDispositivoSeleccionado] = useState<number | null>(null);
 
-  const dispositivosFiltrados = useMemo(() => {
-    const termino = busqueda.trim().toLowerCase();
-
-    if (!termino) {
-      return dispositivosMock;
+  const cargarCatalogo = useCallback(async (query: string) => {
+    setCargando(true);
+    try {
+      const data = await obtenerDispositivos({ query, size: 50 });
+      setDispositivos(data.items);
+      setError(null);
+    } catch (err) {
+      setError(mensajeDeError(err));
+    } finally {
+      setCargando(false);
     }
+  }, []);
 
-    return dispositivosMock.filter(({ marca, modelo }) =>
-      `${marca} ${modelo}`.toLowerCase().includes(termino),
-    );
-  }, [busqueda]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void cargarCatalogo(busqueda);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [busqueda, cargarCatalogo]);
 
-  const renderDevice: ListRenderItem<DispositivoMock> = ({ item }) => {
+  const renderDevice: ListRenderItem<DeviceSummaryDto> = ({ item }) => {
     const selected = dispositivoSeleccionado === item.id;
+    const urlAbsoluta = urlImagenDispositivo(item.imageUri);
+    const localFallback = resolverImagenProyecto(item.commercialName);
+    const fuenteImagen = urlAbsoluta ? { uri: urlAbsoluta } : localFallback;
 
     return (
       <TouchableOpacity
-        accessibilityLabel={`${item.marca} ${item.modelo}`}
+        accessibilityLabel={`${item.brand} ${item.commercialName}`}
         accessibilityRole="button"
         accessibilityState={{ selected }}
         activeOpacity={0.8}
@@ -61,16 +63,26 @@ export default function SeleccionarDispositivoScreen() {
         style={[styles.deviceCard, selected && styles.deviceCardSelected]}
       >
         <View style={styles.previewArea}>
-          <PhonePreview dispositivo={item} />
+          {fuenteImagen ? (
+            <Image
+              source={fuenteImagen}
+              style={styles.deviceImage}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.phonePlaceholder}>
+              <Ionicons name="phone-portrait-outline" size={38} color={Colors.proyectoNuevo.muted} />
+            </View>
+          )}
         </View>
-        <Text style={styles.brand}>{item.marca}</Text>
-        <Text style={styles.model}>{item.modelo}</Text>
-        <UnlockToolSupportBadge supported={item.unlockToolSupported} />
+        <Text style={styles.brand}>{item.brand}</Text>
+        <Text style={styles.model}>{item.commercialName}</Text>
+        <UnlockToolSupportBadge status={item.unlockToolStatus} />
       </TouchableOpacity>
     );
   };
 
-  const selectedDevice = dispositivosMock.find((item) => item.id === dispositivoSeleccionado);
+  const selectedDevice = dispositivos.find((item) => item.id === dispositivoSeleccionado);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
@@ -102,18 +114,43 @@ export default function SeleccionarDispositivoScreen() {
       </View>
 
       <Text style={styles.availableCount}>
-        {dispositivosFiltrados.length} dispositivos disponibles
+        {dispositivos.length} {dispositivos.length === 1 ? 'dispositivo disponible' : 'dispositivos disponibles'}
       </Text>
 
-      <FlatList
-        columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={styles.gridContent}
-        data={dispositivosFiltrados}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        renderItem={renderDevice}
-        showsVerticalScrollIndicator={false}
-      />
+      {cargando && dispositivos.length === 0 ? (
+        <View style={styles.centeredContainer}>
+          <ActivityIndicator size="large" color={Colors.proyectoNuevo.action} />
+          <Text style={styles.stateText}>Cargando dispositivos...</Text>
+        </View>
+      ) : error && dispositivos.length === 0 ? (
+        <View style={styles.centeredContainer}>
+          <Ionicons name="cloud-offline-outline" size={40} color={Colors.proyectoNuevo.muted} />
+          <Text style={styles.stateTitle}>Error al cargar dispositivos</Text>
+          <Text style={styles.stateSubtitle}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => void cargarCatalogo(busqueda)}
+          >
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      ) : dispositivos.length === 0 ? (
+        <View style={styles.centeredContainer}>
+          <Ionicons name="search-outline" size={38} color={Colors.proyectoNuevo.muted} />
+          <Text style={styles.stateTitle}>Sin resultados</Text>
+          <Text style={styles.stateSubtitle}>{`No encontramos dispositivos para "${busqueda}"`}</Text>
+        </View>
+      ) : (
+        <FlatList
+          columnWrapperStyle={styles.gridRow}
+          contentContainerStyle={styles.gridContent}
+          data={dispositivos}
+          keyExtractor={(item) => String(item.id)}
+          numColumns={2}
+          renderItem={renderDevice}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
 
       <View style={styles.selectionFooter}>
         <TouchableOpacity
@@ -125,7 +162,13 @@ export default function SeleccionarDispositivoScreen() {
             if (selectedDevice) {
               router.push({
                 pathname: '/seleccionar-telefono',
-                params: { dispositivoId: selectedDevice.id },
+                params: {
+                  dispositivoId: String(selectedDevice.id),
+                  marca: selectedDevice.brand,
+                  modelo: selectedDevice.commercialName,
+                  imageUri: selectedDevice.imageUri ?? '',
+                  unlockToolStatus: selectedDevice.unlockToolStatus,
+                },
               });
             }
           }}
@@ -222,46 +265,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  phonePreview: {
-    borderRadius: 12,
-    borderWidth: 4,
+  deviceImage: {
     height: 95,
-    position: 'relative',
-    shadowColor: Colors.proyectoNuevo.title,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
-    shadowRadius: 8,
-    width: 60,
+    width: '100%',
   },
-  phoneSpeaker: {
-    borderRadius: 4,
-    height: 3,
-    left: 19,
-    opacity: 0.7,
-    position: 'absolute',
-    top: 6,
-    width: 15,
-  },
-  cameraRing: {
+  phonePlaceholder: {
     alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 2,
-    height: 21,
+    backgroundColor: '#F3F5F7',
+    borderRadius: 14,
+    height: 95,
     justifyContent: 'center',
-    position: 'absolute',
-    right: 5,
-    top: 9,
-    width: 21,
-  },
-  cameraLens: {
-    borderRadius: 10,
-    height: 11,
-    width: 11,
-  },
-  lowerLens: {
-    position: 'absolute',
-    right: 8,
-    top: 33,
+    width: 65,
   },
   brand: {
     color: Colors.proyectoNuevo.muted,
@@ -299,5 +313,40 @@ const styles = StyleSheet.create({
   },
   useButtonTextEnabled: {
     color: Colors.surface,
+  },
+  centeredContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  stateText: {
+    color: Colors.proyectoNuevo.muted,
+    fontSize: 13,
+    marginTop: 12,
+  },
+  stateTitle: {
+    color: Colors.proyectoNuevo.title,
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 12,
+  },
+  stateSubtitle: {
+    color: Colors.proyectoNuevo.muted,
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: Colors.proyectoNuevo.action,
+    borderRadius: 10,
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  retryButtonText: {
+    color: Colors.surface,
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

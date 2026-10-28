@@ -176,6 +176,16 @@ El listado es una sola consulta ligera con LIMIT/OFFSET y un COUNT separado; sin
 Devuelve los mismos campos del modelo (id, brand, commercialName, imageUri, unlockToolStatus).
 Si el id no existe o el modelo tiene is_active = false → 404 con ProblemDetail: "Device not found: {id}".
 
+6.3 Subida de imagen: POST /api/v1/devices/{id}/image
+- Consumo: multipart/form-data con el parámetro "file".
+- Valida que el archivo no esté vacío y pertenezca a tipos de imagen soportados (image/jpeg, image/png, image/webp, image/gif).
+- Almacena el archivo en la carpeta configurada (app.storage.upload-dir) con nombre único UUID.
+- Actualiza la columna image_uri con "/uploads/{fileName}" y updated_at en phone_models.
+- Si el modelo ya contaba con una imagen previa en /uploads/, elimina el archivo anterior del disco para evitar archivos huérfanos.
+- Devuelve 200 OK con el DeviceDetailResponse actualizado (id, brand, commercialName, imageUri, unlockToolStatus).
+- Si el id no existe o is_active = false → 404 con ProblemDetail.
+- Si el archivo es inválido o no soportado → 400 Bad Request.
+
 Estados de compatibilidad (enum UnlockToolSupportStatus): SUPPORTED, UNSUPPORTED, UNKNOWN.
 7. Reglas de eficiencia y persistencia
 - Evitar el problema N+1: no consultar por separado las fallas de cada proyecto del listado.

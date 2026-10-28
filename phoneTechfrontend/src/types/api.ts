@@ -53,3 +53,34 @@ export interface ProjectImageDto {
   url: string;
   sortOrder: number;
 }
+
+/** Soporte de UnlockTool devuelto por el backend. */
+export type UnlockToolSupportStatusDto = 'SUPPORTED' | 'UNSUPPORTED' | 'UNKNOWN';
+
+/** GET /api/v1/devices — item del listado de dispositivos. */
+export interface DeviceSummaryDto {
+  id: number;
+  brand: string;
+  commercialName: string;
+  imageUri: string | null;
+  unlockToolStatus: UnlockToolSupportStatusDto;
+}
+
+/** GET /api/v1/devices — respuesta paginada del catálogo de dispositivos. */
+export interface DevicePageDto {
+  items: DeviceSummaryDto[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+}
+
+/** GET /api/v1/devices/{id} y POST /api/v1/devices/{id}/image — detalle de un dispositivo. */
+export interface DeviceDetailDto {
+  id: number;
+  brand: string;
+  commercialName: string;
+  imageUri: string | null;
+  unlockToolStatus: UnlockToolSupportStatusDto;
+}

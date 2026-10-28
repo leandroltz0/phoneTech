@@ -45,6 +45,24 @@ public class PhoneModel {
     protected PhoneModel() {
     }
 
+    public PhoneModel(Long id, String brand, String commercialName, String imageUri,
+                      UnlockToolSupportStatus unlocktoolStatus, boolean isActive,
+                      Instant createdAt, Instant updatedAt) {
+        this.id = id;
+        this.brand = brand;
+        this.commercialName = commercialName;
+        this.imageUri = imageUri;
+        this.unlocktoolStatus = unlocktoolStatus;
+        this.isActive = isActive;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    public void updateImageUri(String imageUri) {
+        this.imageUri = imageUri;
+        this.updatedAt = Instant.now();
+    }
+
     public Long getId() {
         return id;
     }

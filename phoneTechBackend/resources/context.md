@@ -49,7 +49,7 @@ Estados actualmente definidos:
 - READY_TO_SELL
 - FOR_SALE
 - SOLD
-La tabla projects no tiene una columna diagnosis. Tampoco contiene actualmente columnas para variante del teléfono, precio de compra, precio de venta, costes reales, ganancia real ni compatibilidad con UnlockTool. No inventar esos datos ni consultarlos como si existieran.
+La tabla projects no tiene una columna diagnosis. Tampoco contiene columnas para variante del teléfono, precio de compra, precio de venta, costes reales, ganancia real ni compatibilidad con UnlockTool. No inventar esos datos ni consultarlos como si existieran.
 4.2 public.diagnostic_fault_catalog
 Catálogo de fallas disponibles:
 - id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY
@@ -83,6 +83,26 @@ Un proyecto puede tener cero, una o varias fallas relacionadas.
 - Índice sobre project_faults.project_id.
 - Índice sobre (diagnostic_fault_catalog.component_code, is_active, sort_order).
 Antes de proponer índices nuevos, inspeccionar el esquema real y justificar la mejora esperada.
+
+4.5 public.phone_models
+Catálogo de dispositivos administrado en PostgreSQL. La tabla se crea manualmente en pgAdmin 4 con el SQL acordado (no hay scripts de migración en el repositorio). El repositorio no ejecuta migraciones (ddl-auto: validate): si el esquema no coincide, la aplicación no arranca.
+
+Estructura:
+- id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY
+- brand VARCHAR(100) NOT NULL
+- commercial_name VARCHAR(150) NOT NULL
+- image_uri TEXT NULL
+- unlocktool_status VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN', con CHECK en ('SUPPORTED', 'UNSUPPORTED', 'UNKNOWN')
+- is_active BOOLEAN NOT NULL DEFAULT TRUE
+- created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+- updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+- UNIQUE (brand, commercial_name)
+- Índice sobre is_active
+
+image_uri es la URL de la imagen del modelo de celular y puede ser NULL (el frontend muestra un placeholder). No confundir con diagnostic_fault_catalog.image_uri, que es la imagen de una falla.
+
+El soporte de UnlockTool se guarda por modelo en unlocktool_status. UNKNOWN significa sin verificar: no debe convertirse en UNSUPPORTED por falta de información ni asumirse SUPPORTED sin verificación.
+No existen tablas de variantes ni de operaciones de UnlockTool; no inventarlas ni consultarlas.
 5. Contrato HTTP previsto para proyectos
 El prefijo de las rutas es /api/v1.
 5.1 Listado: GET /api/v1/projects
@@ -126,7 +146,38 @@ Como la base tiene varias tablas relacionadas, el backend puede usar una consult
 Si el proyecto no existe, devolver 404 Not Found siguiendo las convenciones existentes del proyecto.
 5.3 Una petición HTTP no equivale a una consulta SQL
 El frontend debe realizar una petición HTTP para recuperar el listado y otra para cargar el detalle cuando se abra un proyecto. El backend puede consultar varias tablas internamente para construir una única respuesta. No hace falta exponer un endpoint HTTP separado por cada tabla.
-6. Reglas de eficiencia y persistencia
+6. Contrato HTTP del catálogo de dispositivos
+El prefijo es /api/v1, con las mismas convenciones que los endpoints de proyectos. Implementado en el paquete com.phoneTech.demo.devices.
+
+6.1 Listado: GET /api/v1/devices?query=&page=&size=
+- query: filtro opcional; busca por marca o nombre comercial (ejecutado en PostgreSQL).
+- page: base 0, por defecto 0. size: por defecto 20, máximo 100 (valores fuera de rango se ajustan en el service).
+Ejemplo ilustrativo de respuesta:
+{
+  "items": [
+    {
+      "id": 1,
+      "brand": "Samsung",
+      "commercialName": "Galaxy A03",
+      "imageUri": null,
+      "unlockToolStatus": "UNKNOWN"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1,
+  "hasNext": false
+}
+unlockToolStatus es el estado directo de la columna phone_models.unlocktool_status: "SUPPORTED", "UNSUPPORTED" o "UNKNOWN". Nunca se infiere UNSUPPORTED por falta de datos.
+El listado es una sola consulta ligera con LIMIT/OFFSET y un COUNT separado; sin N+1.
+
+6.2 Detalle: GET /api/v1/devices/{id}
+Devuelve los mismos campos del modelo (id, brand, commercialName, imageUri, unlockToolStatus).
+Si el id no existe o el modelo tiene is_active = false → 404 con ProblemDetail: "Device not found: {id}".
+
+Estados de compatibilidad (enum UnlockToolSupportStatus): SUPPORTED, UNSUPPORTED, UNKNOWN.
+7. Reglas de eficiencia y persistencia
 - Evitar el problema N+1: no consultar por separado las fallas de cada proyecto del listado.
 - En el listado, devolver solamente los campos que necesita la pantalla. No serializar entidades completas innecesariamente.
 - En el detalle, obtener las fallas de forma eficiente y agrupar correctamente las filas resultantes de los JOIN.
@@ -138,17 +189,15 @@ El frontend debe realizar una petición HTTP para recuperar el listado y otra pa
 - Manejar correctamente los resultados vacíos, valores nulos y errores de recurso inexistente.
 - Revisar cuidadosamente las restricciones de agregación, por ejemplo el uso de DISTINCT y el orden en STRING_AGG, para evitar fallas o diagnósticos duplicados.
 - Preservar la codificación UTF-8. Los textos deben mostrarse correctamente, por ejemplo Módulo, y no como MÃ³dulo. Corregir el origen de un problema de codificación; no reemplazar cadenas manualmente en el frontend como parche.
-7. Imágenes de celulares
-El esquema descrito no tiene actualmente una relación persistida entre cada proyecto y la imagen del modelo de celular. No asumir que el backend ya puede enviar esa imagen.
+8. Imágenes de celulares
+El catálogo phone_models tiene image_uri TEXT NULL para la imagen del modelo de celular (ver 4.5). Si es NULL, el frontend debe mostrar un placeholder; no inventar URLs ni asignar imágenes arbitrarias.
 
-Antes de implementarlo, inspeccionar cómo lo resuelve el frontend:
+Antes de modificar imágenes, inspeccionar cómo lo resuelve el frontend:
 - Si el frontend usa assets locales o un catálogo de modelos, verificar cómo identifica el modelo y cómo resuelve su imagen.
-- Si la aplicación requiere que el backend entregue una URL de imagen, determinar qué dato fiable del modelo la identifica y proponer un cambio de esquema o catálogo solo si hace falta.
 - No confundir diagnostic_fault_catalog.image_uri con la fotografía del teléfono.
-- No inventar URLs ni asignar imágenes arbitrarias.
 - No modificar la base de datos sin autorización explícita.
 La asociación de imágenes debe seguir funcionando al reiniciar la aplicación y volver a cargar los proyectos guardados.
-8. Integración con el frontend
+9. Integración con el frontend
 El frontend usa React Native, Expo, TypeScript y Expo Router. Cuando se trabaje en integración, comprobar:
 - URL base real del backend para el entorno de ejecución (emulador, dispositivo físico o entorno web).
 - Coincidencia entre las rutas HTTP del frontend y las definidas en los controllers.
@@ -159,7 +208,7 @@ El frontend usa React Native, Expo, TypeScript y Expo Router. Cuando se trabaje 
 - Ausencia de mocks como sustituto de los datos reales en el flujo de producción.
 - Configuración CORS cuando realmente sea necesaria para el cliente o el entorno utilizado.
 No asumir que localhost desde un dispositivo móvil apunta a la computadora que ejecuta Spring Boot. Identificar el entorno antes de cambiar URLs o configurar el servidor.
-9. Convenciones de desarrollo para asistentes de IA
+10. Convenciones de desarrollo para asistentes de IA
 Antes de modificar el código:
 1. Inspeccionar el árbol del repositorio, pom.xml, configuración de Spring, paquetes, entities, repositories, services, controllers, DTO y pruebas existentes.
 2. Identificar qué está implementado y qué falta; distinguir hechos del código de recomendaciones.
@@ -170,18 +219,21 @@ Antes de modificar el código:
 7. No hacer commits ni push, salvo que se solicite explícitamente.
 8. Usar la rama 01-ProjectsEndpoints para el trabajo relacionado con el endpoint de proyectos, si esa rama existe y corresponde a la tarea. Confirmar el estado actual antes de cambiar de rama.
 9. Explicar los archivos modificados y justificar las decisiones relevantes.
-10. Verificación antes de declarar una tarea terminada
+11. Verificación antes de declarar una tarea terminada
 Ejecutar las verificaciones que estén disponibles y reportar sus resultados reales:
 - Compilación Maven (preferir el wrapper si existe).
 - Pruebas automatizadas relevantes.
 - Verificación de las consultas y del mapeo de proyecciones/DTO.
 - Pruebas de GET /api/v1/projects y GET /api/v1/projects/{id} con datos reales, si PostgreSQL está disponible.
+- Pruebas de GET /api/v1/devices y GET /api/v1/devices/{id} con datos reales, si PostgreSQL está disponible y la tabla phone_models fue creada.
 - Proyecto sin fallas, proyecto con varias fallas y id inexistente.
 - Comprobación de ausencia de consultas N+1.
 - Compilación y pruebas del frontend cuando la tarea incluya integración.
 No afirmar que una prueba fue ejecutada si no se ejecutó. Si un servicio o base de datos no está disponible, indicar exactamente qué quedó sin comprobar.
-11. Estado y alcance conocido
+12. Estado y alcance conocido
 El esquema de proyectos y diagnósticos está definido y se ha preparado una prueba de datos con un Samsung Galaxy A03, una falla de módulo y una falla de tapa trasera. En una consulta visual del catálogo, las fallas aparecen con los ID 5 y 6. Esto confirma únicamente que esas filas existen en diagnostic_fault_catalog; no confirma por sí mismo que el proyecto esté guardado en projects, que las filas existan en project_faults ni que los endpoints funcionen.
 
-El alcance de los endpoints de proyectos debe mantenerse acotado a los datos que existen actualmente. El almacenamiento de variante, costes, precio de compra/venta, ganancia real e imagen del celular requiere verificar o ampliar el modelo antes de exponer esos datos.
+El catálogo de dispositivos (paquete devices, endpoints GET /api/v1/devices y /{id}) está implementado en Java con tests unitarios sobre la tabla phone_models; la tabla y la semilla se crean manualmente en pgAdmin 4 con el SQL acordado (no está en el repo). Hasta crearla, los endpoints de dispositivos fallarán al arrancar la aplicación por ddl-auto: validate. La semilla trae 3 modelos con soporte UNKNOWN y sin URLs de imagen: esos datos quedan pendientes de completar en PostgreSQL.
+
+El alcance de los endpoints de proyectos debe mantenerse acotado a los datos que existen actualmente. El almacenamiento de variante, costes, precio de compra/venta y ganancia real requiere verificar o ampliar el modelo antes de exponer esos datos.
 Regla general: verificar primero, implementar lo necesario, probarlo y reportar con honestidad qué funciona y qué queda pendiente. No presentar una suposición como resultado comprobado.

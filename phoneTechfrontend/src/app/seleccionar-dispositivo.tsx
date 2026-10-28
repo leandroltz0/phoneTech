@@ -58,7 +58,7 @@ export default function SeleccionarDispositivoScreen() {
         accessibilityLabel={`${item.brand} ${item.commercialName}`}
         accessibilityRole="button"
         accessibilityState={{ selected }}
-        activeOpacity={0.8}
+        activeOpacity={0.82}
         onPress={() => setDispositivoSeleccionado(item.id)}
         style={[styles.deviceCard, selected && styles.deviceCardSelected]}
       >
@@ -71,13 +71,20 @@ export default function SeleccionarDispositivoScreen() {
             />
           ) : (
             <View style={styles.phonePlaceholder}>
-              <Ionicons name="phone-portrait-outline" size={38} color={Colors.proyectoNuevo.muted} />
+              <Ionicons name="phone-portrait-outline" size={40} color="#94A3B8" />
             </View>
           )}
         </View>
-        <Text style={styles.brand}>{item.brand}</Text>
-        <Text style={styles.model}>{item.commercialName}</Text>
-        <UnlockToolSupportBadge status={item.unlockToolStatus} />
+
+        <View style={styles.deviceInfo}>
+          <Text style={styles.brand} numberOfLines={1}>
+            {item.brand}
+          </Text>
+          <Text style={styles.model} numberOfLines={1}>
+            {item.commercialName}
+          </Text>
+          <UnlockToolSupportBadge status={item.unlockToolStatus} />
+        </View>
       </TouchableOpacity>
     );
   };
@@ -232,61 +239,79 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   availableCount: {
-    color: Colors.proyectoNuevo.muted,
-    fontSize: 11,
-    marginLeft: 20,
-    marginTop: 15,
+    color: '#7C8B9E',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 18,
+    marginTop: 16,
+    marginBottom: 4,
   },
   gridContent: {
-    paddingBottom: 12,
-    paddingHorizontal: 20,
-    paddingTop: 11,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
   gridRow: {
-    gap: 10,
-    marginBottom: 10,
+    gap: 12,
+    marginBottom: 12,
   },
   deviceCard: {
     backgroundColor: Colors.surface,
     borderColor: 'transparent',
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 2,
     flex: 1,
-    height: 195,
-    overflow: 'hidden',
-    paddingBottom: 17,
-    paddingHorizontal: 13,
+    height: 246,
+    justifyContent: 'space-between',
+    paddingBottom: 16,
+    paddingHorizontal: 15,
+    paddingTop: 16,
+    shadowColor: '#10264C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   deviceCardSelected: {
     borderColor: Colors.proyectoNuevo.action,
+    shadowOpacity: 0.12,
   },
   previewArea: {
     alignItems: 'center',
-    flex: 1,
+    height: 122,
     justifyContent: 'center',
+    width: '100%',
   },
   deviceImage: {
-    height: 95,
+    height: '100%',
     width: '100%',
   },
   phonePlaceholder: {
     alignItems: 'center',
-    backgroundColor: '#F3F5F7',
-    borderRadius: 14,
-    height: 95,
+    backgroundColor: '#F3F6F9',
+    borderRadius: 16,
+    height: '100%',
     justifyContent: 'center',
-    width: 65,
+    width: '100%',
+  },
+  deviceInfo: {
+    width: '100%',
   },
   brand: {
-    color: Colors.proyectoNuevo.muted,
-    fontSize: 9,
-    lineHeight: 12,
+    color: '#7C8B9E',
+    fontSize: 12.5,
+    fontWeight: '500',
+    letterSpacing: -0.2,
+    lineHeight: 16,
+    marginBottom: 2,
   },
   model: {
-    color: Colors.proyectoNuevo.modelText,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 15,
+    color: '#0B1A2C',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    lineHeight: 22,
+    marginBottom: 10,
   },
   selectionFooter: {
     backgroundColor: Colors.proyectoNuevo.background,

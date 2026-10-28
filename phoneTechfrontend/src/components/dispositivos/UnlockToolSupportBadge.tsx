@@ -21,7 +21,7 @@ export function UnlockToolSupportBadge({ supported, status, style }: UnlockToolS
       : 'No compatible con UnlockTool';
 
   const text = isSupported
-    ? 'UnlockTool'
+    ? 'UnlockTool compatible'
     : isUnknown
       ? 'Sin verificar'
       : 'Sin soporte';
@@ -41,10 +41,10 @@ export function UnlockToolSupportBadge({ supported, status, style }: UnlockToolS
   const iconName = isSupported
     ? 'checkmark-circle'
     : isUnknown
-      ? 'help-circle-outline'
+      ? 'help-circle'
       : 'close-circle';
 
-  const iconColor = isSupported ? '#27866E' : isUnknown ? '#8A97A6' : '#718398';
+  const iconColor = isSupported ? '#15803D' : isUnknown ? '#8A97A6' : '#64748B';
 
   return (
     <View
@@ -55,9 +55,9 @@ export function UnlockToolSupportBadge({ supported, status, style }: UnlockToolS
       <Ionicons
         color={iconColor}
         name={iconName}
-        size={10}
+        size={14}
       />
-      <Text style={[styles.label, textStyle]}>
+      <Text style={[styles.label, textStyle]} numberOfLines={1}>
         {text}
       </Text>
     </View>
@@ -68,18 +68,33 @@ const styles = StyleSheet.create({
   badge: {
     alignItems: 'center',
     alignSelf: 'flex-start',
-    borderRadius: 10,
+    borderRadius: 20,
     flexDirection: 'row',
-    gap: 3,
-    marginTop: 5,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
   },
-  supportedBadge: { backgroundColor: '#DDF5E9' },
-  unsupportedBadge: { backgroundColor: '#EEF2F5' },
-  unknownBadge: { backgroundColor: '#F1F4F7' },
-  label: { fontSize: 8.5, fontWeight: '700' },
-  supportedLabel: { color: '#27866E' },
-  unsupportedLabel: { color: '#718398' },
-  unknownLabel: { color: '#8A97A6' },
+  supportedBadge: {
+    backgroundColor: '#E6F8EE',
+  },
+  unsupportedBadge: {
+    backgroundColor: '#F1F4F8',
+  },
+  unknownBadge: {
+    backgroundColor: '#F3F4F7',
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  supportedLabel: {
+    color: '#15803D',
+  },
+  unsupportedLabel: {
+    color: '#64748B',
+  },
+  unknownLabel: {
+    color: '#8A97A6',
+  },
 });

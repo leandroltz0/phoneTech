@@ -34,3 +34,6 @@ build/
 
 ### Uploaded images ###
 uploads/
+
+# Local database credentials
+src/main/resources/application-local.yaml

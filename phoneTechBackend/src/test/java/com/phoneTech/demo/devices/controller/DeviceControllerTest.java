@@ -3,6 +3,7 @@ package com.phoneTech.demo.devices.controller;
 import com.phoneTech.demo.devices.dto.DeviceDetailResponse;
 import com.phoneTech.demo.devices.dto.DevicePageResponse;
 import com.phoneTech.demo.devices.dto.DeviceSummaryResponse;
+import com.phoneTech.demo.devices.dto.DeviceVariantResponse;
 import com.phoneTech.demo.devices.enums.UnlockToolSupportStatus;
 import com.phoneTech.demo.devices.exception.DeviceNotFoundException;
 import com.phoneTech.demo.devices.service.DeviceService;
@@ -17,6 +18,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -103,6 +105,46 @@ class DeviceControllerTest {
         when(deviceService.getDevice(999L)).thenThrow(new DeviceNotFoundException(999L));
 
         mockMvc.perform(get("/api/v1/devices/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("Device not found: 999"));
+    }
+
+    @Test
+    void returnsDeviceVariants() throws Exception {
+        when(deviceService.getDeviceVariants(1L)).thenReturn(List.of(
+                new DeviceVariantResponse(10L, "SM-A035M", "4 GB", "64 GB",
+                        new BigDecimal("150000.00"), true),
+                new DeviceVariantResponse(11L, "SM-A035F", "3 GB", "32 GB",
+                        new BigDecimal("135000.00"), false)));
+
+        mockMvc.perform(get("/api/v1/devices/1/variants"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(10))
+                .andExpect(jsonPath("$[0].code").value("SM-A035M"))
+                .andExpect(jsonPath("$[0].ram").value("4 GB"))
+                .andExpect(jsonPath("$[0].storage").value("64 GB"))
+                .andExpect(jsonPath("$[0].resalePrice").value(150000.00))
+                .andExpect(jsonPath("$[0].isCommon").value(true))
+                .andExpect(jsonPath("$[1].code").value("SM-A035F"))
+                .andExpect(jsonPath("$[1].isCommon").value(false));
+    }
+
+    @Test
+    void returnsEmptyVariantsListWhenModelHasNone() throws Exception {
+        when(deviceService.getDeviceVariants(2L)).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/devices/2/variants"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void returnsNotFoundWhenFetchingVariantsForNonExistentDevice() throws Exception {
+        when(deviceService.getDeviceVariants(999L)).thenThrow(new DeviceNotFoundException(999L));
+
+        mockMvc.perform(get("/api/v1/devices/999/variants"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.detail").value("Device not found: 999"));

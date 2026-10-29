@@ -3,11 +3,14 @@ package com.phoneTech.demo.devices.service;
 import com.phoneTech.demo.devices.dto.DeviceDetailResponse;
 import com.phoneTech.demo.devices.dto.DevicePageResponse;
 import com.phoneTech.demo.devices.dto.DeviceSummaryResponse;
+import com.phoneTech.demo.devices.dto.DeviceVariantResponse;
 import com.phoneTech.demo.devices.entity.PhoneModel;
+import com.phoneTech.demo.devices.entity.PhoneModelVariant;
 import com.phoneTech.demo.devices.enums.UnlockToolSupportStatus;
 import com.phoneTech.demo.devices.exception.DeviceNotFoundException;
 import com.phoneTech.demo.devices.repository.PhoneModelRepository;
 import com.phoneTech.demo.devices.repository.PhoneModelRepository.DeviceSummaryRow;
+import com.phoneTech.demo.devices.repository.PhoneModelVariantRepository;
 import com.phoneTech.demo.projects.exception.InvalidImageException;
 import com.phoneTech.demo.projects.storage.StorageService;
 import org.springframework.stereotype.Service;
@@ -32,10 +35,14 @@ public class DeviceService {
     );
 
     private final PhoneModelRepository phoneModelRepository;
+    private final PhoneModelVariantRepository phoneModelVariantRepository;
     private final StorageService storageService;
 
-    public DeviceService(PhoneModelRepository phoneModelRepository, StorageService storageService) {
+    public DeviceService(PhoneModelRepository phoneModelRepository,
+                         PhoneModelVariantRepository phoneModelVariantRepository,
+                         StorageService storageService) {
         this.phoneModelRepository = phoneModelRepository;
+        this.phoneModelVariantRepository = phoneModelVariantRepository;
         this.storageService = storageService;
     }
 
@@ -67,6 +74,19 @@ public class DeviceService {
                 .orElseThrow(() -> new DeviceNotFoundException(id));
 
         return toDetail(model);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DeviceVariantResponse> getDeviceVariants(Long deviceId) {
+        phoneModelRepository.findById(deviceId)
+                .filter(PhoneModel::isActive)
+                .orElseThrow(() -> new DeviceNotFoundException(deviceId));
+
+        return phoneModelVariantRepository
+                .findByPhoneModelIdAndIsActiveTrueOrderByIsCommonDescCodeAsc(deviceId)
+                .stream()
+                .map(this::toVariant)
+                .toList();
     }
 
     @Transactional
@@ -117,6 +137,17 @@ public class DeviceService {
                 model.getCommercialName(),
                 model.getImageUri(),
                 model.getUnlocktoolStatus()
+        );
+    }
+
+    private DeviceVariantResponse toVariant(PhoneModelVariant variant) {
+        return new DeviceVariantResponse(
+                variant.getId(),
+                variant.getCode(),
+                variant.getRam(),
+                variant.getStorage(),
+                variant.getResalePrice(),
+                variant.isCommon()
         );
     }
 

@@ -3,11 +3,14 @@ package com.phoneTech.demo.devices.service;
 import com.phoneTech.demo.devices.dto.DeviceDetailResponse;
 import com.phoneTech.demo.devices.dto.DevicePageResponse;
 import com.phoneTech.demo.devices.dto.DeviceSummaryResponse;
+import com.phoneTech.demo.devices.dto.DeviceVariantResponse;
 import com.phoneTech.demo.devices.entity.PhoneModel;
+import com.phoneTech.demo.devices.entity.PhoneModelVariant;
 import com.phoneTech.demo.devices.enums.UnlockToolSupportStatus;
 import com.phoneTech.demo.devices.exception.DeviceNotFoundException;
 import com.phoneTech.demo.devices.repository.PhoneModelRepository;
 import com.phoneTech.demo.devices.repository.PhoneModelRepository.DeviceSummaryRow;
+import com.phoneTech.demo.devices.repository.PhoneModelVariantRepository;
 import com.phoneTech.demo.projects.exception.InvalidImageException;
 import com.phoneTech.demo.projects.storage.StorageService;
 import org.junit.jupiter.api.Test;
@@ -16,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -38,10 +42,13 @@ class DeviceServiceTest {
     private PhoneModelRepository phoneModelRepository;
 
     @Mock
+    private PhoneModelVariantRepository phoneModelVariantRepository;
+
+    @Mock
     private StorageService storageService;
 
     private DeviceService service() {
-        return new DeviceService(phoneModelRepository, storageService);
+        return new DeviceService(phoneModelRepository, phoneModelVariantRepository, storageService);
     }
 
     @Test
@@ -137,6 +144,71 @@ class DeviceServiceTest {
         when(phoneModelRepository.findById(7L)).thenReturn(Optional.of(model));
 
         assertThatThrownBy(() -> service().getDevice(7L))
+                .isInstanceOf(DeviceNotFoundException.class)
+                .hasMessage("Device not found: 7");
+    }
+
+    @Test
+    void returnsVariantsOrderedByCommonFirst() {
+        PhoneModel model = mock(PhoneModel.class);
+        when(model.isActive()).thenReturn(true);
+        when(phoneModelRepository.findById(1L)).thenReturn(Optional.of(model));
+
+        PhoneModelVariant common = mock(PhoneModelVariant.class);
+        when(common.getId()).thenReturn(10L);
+        when(common.getCode()).thenReturn("SM-A035M");
+        when(common.getRam()).thenReturn("4 GB");
+        when(common.getStorage()).thenReturn("64 GB");
+        when(common.getResalePrice()).thenReturn(new BigDecimal("150000.00"));
+        when(common.isCommon()).thenReturn(true);
+
+        PhoneModelVariant other = mock(PhoneModelVariant.class);
+        when(other.getId()).thenReturn(11L);
+        when(other.getCode()).thenReturn("SM-A035F");
+        when(other.getRam()).thenReturn("3 GB");
+        when(other.getStorage()).thenReturn("32 GB");
+        when(other.getResalePrice()).thenReturn(new BigDecimal("135000.00"));
+        when(other.isCommon()).thenReturn(false);
+
+        when(phoneModelVariantRepository.findByPhoneModelIdAndIsActiveTrueOrderByIsCommonDescCodeAsc(1L))
+                .thenReturn(List.of(common, other));
+
+        List<DeviceVariantResponse> variants = service().getDeviceVariants(1L);
+
+        assertThat(variants).containsExactly(
+                new DeviceVariantResponse(10L, "SM-A035M", "4 GB", "64 GB",
+                        new BigDecimal("150000.00"), true),
+                new DeviceVariantResponse(11L, "SM-A035F", "3 GB", "32 GB",
+                        new BigDecimal("135000.00"), false));
+    }
+
+    @Test
+    void returnsEmptyVariantsWhenModelHasNone() {
+        PhoneModel model = mock(PhoneModel.class);
+        when(model.isActive()).thenReturn(true);
+        when(phoneModelRepository.findById(2L)).thenReturn(Optional.of(model));
+        when(phoneModelVariantRepository.findByPhoneModelIdAndIsActiveTrueOrderByIsCommonDescCodeAsc(2L))
+                .thenReturn(List.of());
+
+        assertThat(service().getDeviceVariants(2L)).isEmpty();
+    }
+
+    @Test
+    void throwsNotFoundWhenFetchingVariantsForMissingDevice() {
+        when(phoneModelRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service().getDeviceVariants(999L))
+                .isInstanceOf(DeviceNotFoundException.class)
+                .hasMessage("Device not found: 999");
+    }
+
+    @Test
+    void throwsNotFoundWhenFetchingVariantsForInactiveDevice() {
+        PhoneModel model = mock(PhoneModel.class);
+        when(model.isActive()).thenReturn(false);
+        when(phoneModelRepository.findById(7L)).thenReturn(Optional.of(model));
+
+        assertThatThrownBy(() -> service().getDeviceVariants(7L))
                 .isInstanceOf(DeviceNotFoundException.class)
                 .hasMessage("Device not found: 7");
     }

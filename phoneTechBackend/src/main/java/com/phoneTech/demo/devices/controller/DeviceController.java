@@ -2,6 +2,7 @@ package com.phoneTech.demo.devices.controller;
 
 import com.phoneTech.demo.devices.dto.DeviceDetailResponse;
 import com.phoneTech.demo.devices.dto.DevicePageResponse;
+import com.phoneTech.demo.devices.dto.DeviceVariantResponse;
 import com.phoneTech.demo.devices.service.DeviceService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/devices")
@@ -34,6 +37,11 @@ public class DeviceController {
     @GetMapping("/{id}")
     public ResponseEntity<DeviceDetailResponse> getDeviceById(@PathVariable Long id) {
         return ResponseEntity.ok(deviceService.getDevice(id));
+    }
+
+    @GetMapping("/{id}/variants")
+    public ResponseEntity<List<DeviceVariantResponse>> getDeviceVariants(@PathVariable Long id) {
+        return ResponseEntity.ok(deviceService.getDeviceVariants(id));
     }
 
     @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

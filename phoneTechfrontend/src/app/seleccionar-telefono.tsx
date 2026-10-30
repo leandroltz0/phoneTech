@@ -17,6 +17,7 @@ import {
   VarianteDispositivoMock,
 } from '@/components/dispositivos/DeviceVariantSheet';
 import {
+  COMPONENT_ISSUES,
   ComponentIssueSheet,
   ComponentIssue,
 } from '@/components/dispositivos/ModuleIssueSheet';
@@ -28,14 +29,25 @@ import {
   urlImagenDispositivo,
 } from '@/services/devices';
 import type {
-  DiagnosisCategoryDto,
   DeviceSelectionDataDto,
   DeviceVariantDto,
 } from '@/types/api';
 
-// ─── Categorías de fallas ────────────────────────────────────────────────────
+// ─── Componentes fijos del diagnóstico ──────────────────────────────────────
 
 type CategoriaFallaId = string;
+
+const CATEGORIAS_FALLAS = [
+  { id: 'modulo', label: 'Módulo / pantalla', description: 'Vidrio roto, sin imagen, líneas o fallas táctiles.' },
+  { id: 'bateria', label: 'Batería', description: 'Se descarga rápido, no carga bien o está hinchada.' },
+  { id: 'carga', label: 'Carga', description: 'Pin dañado, flex de carga o conexión intermitente.' },
+  { id: 'tapa', label: 'Tapa y carcasa', description: 'Tapa rota, marco doblado o carcasa dañada.' },
+  { id: 'camara', label: 'Cámara', description: 'Cámara que no funciona, lente o vidrio de cámara roto.' },
+  { id: 'audio', label: 'Audio', description: 'Parlante, auricular o micrófono sin funcionar.' },
+  { id: 'botones', label: 'Botones y flex', description: 'Encendido, volumen o flex sin respuesta.' },
+  { id: 'sim', label: 'SIM y conectividad', description: 'No reconoce SIM, problemas de señal o Wi-Fi.' },
+  { id: 'placa', label: 'Placa y otros', description: 'Fallos de placa, reinicios, humedad u otros daños internos.' },
+] as const;
 
 type CategoriaFalla = {
   id: CategoriaFallaId;
@@ -43,24 +55,6 @@ type CategoriaFalla = {
   description: string;
   issues: ComponentIssue[];
 };
-
-function adaptarCategoriaFalla(category: DiagnosisCategoryDto): CategoriaFalla {
-  return {
-    // El backend actual devuelve null para algunos IDs de categoría; el code
-    // es estable y evita generar keys duplicadas mientras se corrige el DTO.
-    id: category.id === null ? category.code : String(category.id),
-    label: category.name,
-    description: category.description ?? 'Seleccioná una falla para este componente.',
-    issues: (category.issues ?? [])
-      .filter((issue) => issue.active !== false)
-      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-      .map((issue) => ({
-        id: String(issue.id),
-        title: issue.name,
-        description: issue.description,
-      })),
-  };
-}
 
 function adaptarVariante(variant: DeviceSelectionDataDto['variants'][number]): VarianteDispositivoMock {
   return {
@@ -199,10 +193,10 @@ export default function SeleccionarTelefonoScreen() {
   const imagenPrincipalUri =
     (imagenVarianteUri && !imagenesFallidas[imagenVarianteUri] ? imagenVarianteUri : null) ??
     (imagenDispositivoUri && !imagenesFallidas[imagenDispositivoUri] ? imagenDispositivoUri : null);
-  const categoriasFallas = datos.diagnosisCategories
-    .filter((category) => category.active !== false)
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .map(adaptarCategoriaFalla);
+  const categoriasFallas: CategoriaFalla[] = CATEGORIAS_FALLAS.map((category) => ({
+    ...category,
+    issues: COMPONENT_ISSUES[category.id] ?? [],
+  }));
 
   const categoriaActiva = categoriasFallas.find((cat) => cat.id === categoriaActivaId);
   const fallasDetalladas = categoriasFallas.flatMap((category) => {
@@ -403,10 +397,8 @@ export default function SeleccionarTelefonoScreen() {
                 : `${fallasTotales} falla${fallasTotales > 1 ? 's' : ''} seleccionada${fallasTotales > 1 ? 's' : ''}`}
             </Text>
             <Text style={styles.infoSubtitle}>
-              {categoriasFallas.length === 0
-                ? 'El backend todavía no devolvió categorías de diagnóstico para este dispositivo.'
-                : fallasTotales === 0
-                  ? 'Agregá los componentes con problemas para continuar con el diagnóstico.'
+              {fallasTotales === 0
+                ? 'Agregá los componentes con problemas para continuar con el diagnóstico.'
                 : `Componentes marcados: ${fallasTexto}`}
             </Text>
           </View>

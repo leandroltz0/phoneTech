@@ -113,6 +113,17 @@ export interface DeviceSelectionVariantDto {
   resaleEstimate?: DeviceResaleEstimateDto | null;
 }
 
+/** GET /api/v1/devices/{deviceId}/variants */
+export interface DeviceVariantDto {
+  id: number;
+  code: string;
+  ram: string;
+  storage: string;
+  resalePrice: number | null;
+  isCommon: boolean;
+  imageUri: string | null;
+}
+
 export interface DiagnosisFaultDto {
   id: number;
   code: string;

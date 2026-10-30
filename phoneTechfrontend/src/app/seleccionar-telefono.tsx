@@ -22,8 +22,16 @@ import {
 } from '@/components/dispositivos/ModuleIssueSheet';
 import { DetalleUnlockToolCard } from '@/components/detalle-proyecto/DetalleUnlockToolCard';
 import { mensajeDeError } from '@/services/api';
-import { obtenerDatosSeleccionDispositivo, urlImagenDispositivo } from '@/services/devices';
-import type { DiagnosisCategoryDto, DeviceSelectionDataDto } from '@/types/api';
+import {
+  obtenerDatosSeleccionDispositivo,
+  obtenerVariantesDispositivo,
+  urlImagenDispositivo,
+} from '@/services/devices';
+import type {
+  DiagnosisCategoryDto,
+  DeviceSelectionDataDto,
+  DeviceVariantDto,
+} from '@/types/api';
 
 // ─── Categorías de fallas ────────────────────────────────────────────────────
 
@@ -67,6 +75,24 @@ function adaptarVariante(variant: DeviceSelectionDataDto['variants'][number]): V
     comun: variant.isCommon,
     imagenUri: urlImagenDispositivo(variant.imageUri),
     unlockToolStatus: variant.unlockToolStatus,
+    nombreVariante: variant.variantName,
+  };
+}
+
+function adaptarVarianteListado(
+  variant: DeviceVariantDto,
+  referencia?: DeviceSelectionDataDto['variants'][number],
+): VarianteDispositivoMock {
+  return {
+    id: String(variant.id),
+    codigo: variant.code,
+    ram: variant.ram,
+    almacenamiento: variant.storage,
+    precio: variant.resalePrice,
+    comun: variant.isCommon,
+    imagenUri: urlImagenDispositivo(variant.imageUri),
+    unlockToolStatus: referencia?.unlockToolStatus,
+    nombreVariante: referencia?.variantName,
   };
 }
 
@@ -74,6 +100,9 @@ export default function SeleccionarTelefonoScreen() {
   const { dispositivoId: dispositivoIdParam } = useLocalSearchParams<{ dispositivoId?: string }>();
   const dispositivoId = Array.isArray(dispositivoIdParam) ? dispositivoIdParam[0] : dispositivoIdParam;
   const [datos, setDatos] = useState<DeviceSelectionDataDto | null>(null);
+  const [variantes, setVariantes] = useState<VarianteDispositivoMock[]>([]);
+  const [cargandoVariantes, setCargandoVariantes] = useState(false);
+  const [errorVariantes, setErrorVariantes] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fallasSeleccionadas, setFallasSeleccionadas] = useState<Partial<Record<CategoriaFallaId, string>>>({});
@@ -97,6 +126,7 @@ export default function SeleccionarTelefonoScreen() {
       .then((response) => {
         if (!mounted) return;
         setDatos(response);
+        setVariantes(response.variants.map(adaptarVariante));
         setVarianteSeleccionadaId(response.variants[0] ? String(response.variants[0].id) : undefined);
         setError(null);
       })
@@ -111,6 +141,32 @@ export default function SeleccionarTelefonoScreen() {
       mounted = false;
     };
   }, [dispositivoIdNumerico, parametroError]);
+
+  const abrirSelectorVariantes = async () => {
+    if (dispositivoIdNumerico === null) return;
+
+    setSelectorVarianteVisible(true);
+    setCargandoVariantes(true);
+    setErrorVariantes(null);
+
+    try {
+      const variantesResponse = await obtenerVariantesDispositivo(dispositivoIdNumerico);
+      const variantesAdaptadas = variantesResponse.map((variant) =>
+        adaptarVarianteListado(
+          variant,
+          datos?.variants.find((item) => item.id === variant.id),
+        ),
+      );
+      setVariantes(variantesAdaptadas);
+      if (!varianteSeleccionadaId && variantesAdaptadas[0]) {
+        setVarianteSeleccionadaId(variantesAdaptadas[0].id);
+      }
+    } catch (requestError: unknown) {
+      setErrorVariantes(mensajeDeError(requestError));
+    } finally {
+      setCargandoVariantes(false);
+    }
+  };
 
   const errorParaMostrar = parametroError ?? error;
 
@@ -137,7 +193,6 @@ export default function SeleccionarTelefonoScreen() {
   }
 
   const dispositivo = datos.device;
-  const variantes = datos.variants.map(adaptarVariante);
   const infoVariante = variantes.find((variant) => variant.id === varianteSeleccionadaId) ?? variantes[0];
   const imagenDispositivoUri = urlImagenDispositivo(dispositivo.imageUri);
   const imagenVarianteUri = infoVariante?.imagenUri ?? null;
@@ -211,7 +266,7 @@ export default function SeleccionarTelefonoScreen() {
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel="Seleccionar variante del dispositivo"
-          onPress={() => setSelectorVarianteVisible(true)}
+          onPress={() => void abrirSelectorVariantes()}
           style={styles.card}
         >
           <View style={styles.variantRow}>
@@ -395,8 +450,10 @@ export default function SeleccionarTelefonoScreen() {
         </TouchableOpacity>
       </View>
 
-      {selectorVarianteVisible && variantes.length > 0 && (
+      {selectorVarianteVisible && (
         <DeviceVariantSheet
+          cargando={cargandoVariantes}
+          error={errorVariantes}
           onClose={() => setSelectorVarianteVisible(false)}
           onConfirm={(varianteId) => {
             setVarianteSeleccionadaId(varianteId);

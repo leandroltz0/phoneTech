@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -22,9 +23,12 @@ export type VarianteDispositivoMock = {
   comun?: boolean;
   imagenUri?: string | null;
   unlockToolStatus?: UnlockToolSupportStatusDto;
+  nombreVariante?: string | null;
 };
 
 type DeviceVariantSheetProps = {
+  cargando?: boolean;
+  error?: string | null;
   visible: boolean;
   variantes: VarianteDispositivoMock[];
   varianteSeleccionadaId: string;
@@ -33,6 +37,8 @@ type DeviceVariantSheetProps = {
 };
 
 export function DeviceVariantSheet({
+  cargando = false,
+  error = null,
   visible,
   variantes,
   varianteSeleccionadaId,
@@ -41,6 +47,7 @@ export function DeviceVariantSheet({
 }: DeviceVariantSheetProps) {
   const [busqueda, setBusqueda] = useState('');
   const [seleccionTemporal, setSeleccionTemporal] = useState(varianteSeleccionadaId);
+  const [imagenesFallidas, setImagenesFallidas] = useState<Record<string, boolean>>({});
 
   const variantesFiltradas = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -73,7 +80,8 @@ export function DeviceVariantSheet({
             accessibilityRole="button"
             activeOpacity={0.84}
             onPress={confirmSelection}
-            style={styles.continueButton}
+            disabled={cargando || !seleccionTemporal}
+            style={[styles.continueButton, (cargando || !seleccionTemporal) && styles.continueButtonDisabled]}
           >
             <Ionicons name="play-forward" size={21} color="#0879D9" />
             <Text style={styles.continueText}>Continuar</Text>
@@ -105,7 +113,17 @@ export function DeviceVariantSheet({
             />
       </View>
 
-      <ScrollView
+          {cargando ? (
+            <View style={styles.stateContainer}>
+              <ActivityIndicator color="#0879D9" size="large" />
+              <Text style={styles.emptyText}>Cargando variantes...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.stateContainer}>
+              <Text style={styles.emptyText}>{error}</Text>
+            </View>
+          ) : (
+          <ScrollView
             contentContainerStyle={styles.optionsContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -122,24 +140,26 @@ export function DeviceVariantSheet({
                   style={[styles.option, isSelected && styles.optionSelected]}
                 >
                   <View style={styles.phonePreview}>
-                    {variante.imagenUri ? (
+                    {variante.imagenUri && !imagenesFallidas[variante.imagenUri] ? (
                       <Image
+                        onError={() => setImagenesFallidas((current) => ({
+                          ...current,
+                          [variante.imagenUri as string]: true,
+                        }))}
                         source={{ uri: variante.imagenUri }}
                         style={styles.variantImage}
                         resizeMode="contain"
                       />
                     ) : (
-                      <>
-                        <View style={styles.cameraDot} />
-                        <View style={[styles.cameraDot, styles.lowerCameraDot]} />
-                        <View style={styles.phoneScreen} />
-                      </>
+                      <View style={styles.imagePlaceholder}>
+                        <Ionicons name="image-outline" size={25} color="#94A3B8" />
+                      </View>
                     )}
                   </View>
                   <View style={styles.optionCopy}>
-                    <Text style={styles.optionCode}>{variante.codigo}</Text>
+                    <Text style={styles.optionCode}>{variante.nombreVariante ?? variante.codigo}</Text>
                     <Text style={styles.optionSpecs}>
-                      {variante.ram} · {variante.almacenamiento}
+                      {variante.codigo} · {variante.ram} · {variante.almacenamiento}
                     </Text>
                     {variante.comun && (
                       <View style={styles.commonBadge}>
@@ -159,7 +179,8 @@ export function DeviceVariantSheet({
             {variantesFiltradas.length === 0 && (
               <Text style={styles.emptyText}>No encontramos una variante con ese código.</Text>
             )}
-      </ScrollView>
+          </ScrollView>
+          )}
 
     </SelectionSheet>
   );
@@ -190,27 +211,27 @@ const styles = StyleSheet.create({
   },
   optionSelected: { backgroundColor: '#F4FAFF', borderColor: '#1397F6', borderWidth: 2 },
   phonePreview: {
-    backgroundColor: '#273039',
-    borderColor: '#101B2B',
-    borderRadius: 7,
-    borderWidth: 2,
-    height: 66,
+    alignItems: 'center',
+    backgroundColor: '#F3F7FA',
+    borderColor: '#DCE7EF',
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 70,
     marginRight: 14,
     overflow: 'hidden',
-    position: 'relative',
-    width: 48,
+    width: 70,
   },
   variantImage: { height: '100%', width: '100%' },
-  cameraDot: { backgroundColor: '#050C17', borderColor: '#536071', borderRadius: 5, borderWidth: 1, height: 10, left: 5, position: 'absolute', top: 7, width: 10 },
-  lowerCameraDot: { top: 21 },
-  phoneScreen: { backgroundColor: '#7EB4FE', borderTopLeftRadius: 4, bottom: 3, position: 'absolute', right: 3, top: 3, width: 22 },
+  imagePlaceholder: { alignItems: 'center', flex: 1, justifyContent: 'center', width: '100%' },
   optionCopy: { flex: 1 },
   optionCode: { color: Colors.analisis.title, fontSize: 18, fontWeight: '800', letterSpacing: -0.55 },
   optionSpecs: { color: '#586F9D', fontSize: 13.5, fontWeight: '500', marginTop: 2 },
   commonBadge: { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: '#D8EEFF', borderRadius: 13, flexDirection: 'row', gap: 4, marginTop: 7, paddingHorizontal: 9, paddingVertical: 4 },
   commonText: { color: '#0879D9', fontSize: 10.5, fontWeight: '800' },
   emptyText: { color: Colors.textSecondary, fontSize: 14, paddingVertical: 24, textAlign: 'center' },
+  stateContainer: { alignItems: 'center', justifyContent: 'center', minHeight: 150, paddingHorizontal: 20 },
   continueButton: { alignItems: 'center', backgroundColor: '#D9F1FF', borderRadius: 27, flexDirection: 'row', gap: 9, height: 55, justifyContent: 'center', marginTop: 2 },
+  continueButtonDisabled: { opacity: 0.55 },
   continueText: { color: '#0879D9', fontSize: 17, fontWeight: '700' },
   hintRow: { alignItems: 'flex-start', flexDirection: 'row', gap: 10, paddingHorizontal: 15, paddingTop: 15 },
   hintText: { color: '#526B9C', flex: 1, fontSize: 11.5, lineHeight: 15 },

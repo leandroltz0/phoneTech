@@ -2,6 +2,7 @@ import type {
   DeviceDetailDto,
   DevicePageDto,
   DeviceSelectionDataDto,
+  DeviceVariantDto,
 } from '@/types/api';
 import { API_URL, pedirJson } from './api';
 
@@ -48,6 +49,13 @@ export function obtenerDatosSeleccionDispositivo(
   id: number,
 ): Promise<DeviceSelectionDataDto> {
   return pedirJson<DeviceSelectionDataDto>(`/api/v1/devices/${id}/selection-data`);
+}
+
+/** GET /api/v1/devices/{deviceId}/variants */
+export function obtenerVariantesDispositivo(
+  deviceId: number,
+): Promise<DeviceVariantDto[]> {
+  return pedirJson<DeviceVariantDto[]>(`/api/v1/devices/${deviceId}/variants`);
 }
 
 /** POST /api/v1/devices/{id}/image (multipart/form-data) */

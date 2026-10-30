@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/colors';
-import { analisisEconomicoMock } from '@/data/analisisMock';
+import type { RepairPriceCalculationResponseDto } from '@/types/api';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-AR')}`;
 
-export function EconomicAnalysisCard() {
-  const data = analisisEconomicoMock;
+type EconomicAnalysisCardProps = {
+  data: RepairPriceCalculationResponseDto | null;
+};
+
+export function EconomicAnalysisCard({ data }: EconomicAnalysisCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -17,11 +20,14 @@ export function EconomicAnalysisCard() {
       </View>
 
       <View style={styles.metrics}>
-        <Metric label="Costo estimado de reparación" value={formatCurrency(data.costoReparacion)} />
+        <Metric
+          label="Costo estimado de reparación"
+          value={data ? formatCurrency(data.repairPartsCost) : 'No disponible'}
+        />
         <View style={styles.metricDivider} />
         <Metric
           label="Precio recomendado de compra"
-          value={`${formatCurrency(data.precioCompraMinimo)} – ${formatCurrency(data.precioCompraMaximo)}`}
+          value={data ? formatCurrency(data.maximumPurchasePrice) : 'No disponible'}
         />
       </View>
 
@@ -32,7 +38,7 @@ export function EconomicAnalysisCard() {
         <View>
           <Text style={styles.saleMetricLabel}>Precio estimado de venta</Text>
           <Text style={styles.saleMetricValue}>
-            {formatCurrency(data.precioVentaMinimo)} – {formatCurrency(data.precioVentaMaximo)}
+            {data ? formatCurrency(data.resalePrice) : 'No disponible'}
           </Text>
         </View>
       </View>
@@ -40,13 +46,15 @@ export function EconomicAnalysisCard() {
       <View style={styles.profitBanner}>
         <Ionicons name="bar-chart" size={33} color={Colors.analisis.success} />
         <View style={styles.profitCopy}>
-          <Text style={styles.profitLabel}>Margen de ganancia estimado</Text>
+          <Text style={styles.profitLabel}>Ganancia proyectada</Text>
           <Text style={styles.profitValue}>
-            {formatCurrency(data.gananciaMinima)} – {formatCurrency(data.gananciaMaxima)}
+            {data ? formatCurrency(data.projectedProfit) : 'No disponible'}
           </Text>
         </View>
         <View style={styles.marginBadge}>
-          <Text style={styles.marginText}>{data.margen}</Text>
+          <Text style={styles.marginText}>
+            {data ? (data.purchaseAllowed ? 'Compra aprobada' : 'No aprobada') : 'Sin evaluación'}
+          </Text>
         </View>
       </View>
     </View>

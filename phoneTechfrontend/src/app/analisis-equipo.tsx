@@ -10,16 +10,45 @@ import { ReplacementPartsCard } from '@/components/analisis/ReplacementPartsCard
 import { Colors } from '@/constants/colors';
 import { repuestosMock, resumenAnalisisMock } from '@/data/analisisMock';
 import { dispositivosMock } from '@/data/dispositivosMock';
+import type { RepairPriceCalculationResponseDto } from '@/types/api';
 
 const DEFAULT_VARIANT = 'SM-A035M · 4 GB RAM · 64 GB';
 
+function parseEvaluacion(value?: string): RepairPriceCalculationResponseDto | null {
+  if (!value) return null;
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    const evaluation = parsed as Partial<RepairPriceCalculationResponseDto>;
+    const requiredNumbers = [
+      evaluation.resalePrice,
+      evaluation.repairPartsCost,
+      evaluation.minimumProfit,
+      evaluation.maximumPurchasePrice,
+      evaluation.projectedProfit,
+    ];
+
+    if (requiredNumbers.some((item) => typeof item !== 'number')) return null;
+    if (typeof evaluation.deviceId !== 'number' || typeof evaluation.variantId !== 'number') return null;
+    if (typeof evaluation.purchaseAllowed !== 'boolean') return null;
+
+    return evaluation as RepairPriceCalculationResponseDto;
+  } catch {
+    return null;
+  }
+}
+
 export default function AnalisisEquipoScreen() {
-  const { dispositivoId, variante, diagnostico } = useLocalSearchParams<{
+  const { dispositivoId, variante, diagnostico, evaluacion } = useLocalSearchParams<{
     dispositivoId?: string;
     variante?: string;
     diagnostico?: string;
+    evaluacion?: string;
   }>();
   const dispositivo = dispositivosMock.find(({ id }) => id === dispositivoId) ?? dispositivosMock[0];
+  const evaluacionBackend = parseEvaluacion(evaluacion);
 
   const showPendingDetails = (section: string) => {
     Alert.alert(section, 'El detalle completo estará disponible próximamente.');
@@ -54,7 +83,7 @@ export default function AnalisisEquipoScreen() {
           repuestos={repuestosMock}
           onSeeMore={() => showPendingDetails('Repuestos necesarios')}
         />
-        <EconomicAnalysisCard />
+        <EconomicAnalysisCard data={evaluacionBackend} />
       </ScrollView>
 
       <View style={styles.footer}>

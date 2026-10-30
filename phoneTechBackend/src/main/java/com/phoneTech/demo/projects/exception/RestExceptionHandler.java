@@ -1,6 +1,7 @@
 package com.phoneTech.demo.projects.exception;
 
 import com.phoneTech.demo.devices.exception.DeviceNotFoundException;
+import com.phoneTech.demo.devices.exception.DeviceVariantNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -17,6 +18,11 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(DeviceNotFoundException.class)
     public ProblemDetail handleDeviceNotFound(DeviceNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(DeviceVariantNotFoundException.class)
+    public ProblemDetail handleDeviceVariantNotFound(DeviceVariantNotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 

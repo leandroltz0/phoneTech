@@ -4,6 +4,7 @@ import com.phoneTech.demo.devices.dto.DeviceDetailResponse;
 import com.phoneTech.demo.devices.dto.DevicePageResponse;
 import com.phoneTech.demo.devices.dto.DeviceSummaryResponse;
 import com.phoneTech.demo.devices.dto.DeviceVariantResponse;
+import com.phoneTech.demo.devices.dto.SelectionVariantResponse;
 import com.phoneTech.demo.devices.enums.UnlockToolSupportStatus;
 import com.phoneTech.demo.devices.exception.DeviceNotFoundException;
 import com.phoneTech.demo.devices.service.DeviceService;
@@ -114,7 +115,7 @@ class DeviceControllerTest {
     void returnsDeviceVariants() throws Exception {
         when(deviceService.getDeviceVariants(1L)).thenReturn(List.of(
                 new DeviceVariantResponse(10L, "SM-A035M", "4 GB", "64 GB",
-                        new BigDecimal("150000.00"), true),
+                        new BigDecimal("150000.00"), true, "/uploads/variants/a03-m.webp"),
                 new DeviceVariantResponse(11L, "SM-A035F", "3 GB", "32 GB",
                         new BigDecimal("135000.00"), false)));
 
@@ -127,8 +128,38 @@ class DeviceControllerTest {
                 .andExpect(jsonPath("$[0].storage").value("64 GB"))
                 .andExpect(jsonPath("$[0].resalePrice").value(150000.00))
                 .andExpect(jsonPath("$[0].isCommon").value(true))
+                .andExpect(jsonPath("$[0].imageUri").value("/uploads/variants/a03-m.webp"))
                 .andExpect(jsonPath("$[1].code").value("SM-A035F"))
                 .andExpect(jsonPath("$[1].isCommon").value(false));
+    }
+
+    @Test
+    void uploadsVariantImageWithoutChangingDeviceImage() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "sm-a035m.webp", "image/webp",
+                "dummy-image-bytes".getBytes(StandardCharsets.UTF_8));
+        when(deviceService.uploadVariantImage(eq(1L), eq(10L), any())).thenReturn(
+                new SelectionVariantResponse(10L, "SM-A035M", "Galaxy A03 4/64 GB", 4, 64,
+                        "Unisoc T606", "LATAM", UnlockToolSupportStatus.SUPPORTED,
+                        "/uploads/variants/uuid.webp", true, null, List.of()));
+
+        mockMvc.perform(multipart("/api/v1/devices/1/variants/10/image").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.imageUri").value("/uploads/variants/uuid.webp"))
+                .andExpect(jsonPath("$.unlockToolStatus").value("SUPPORTED"));
+    }
+
+    @Test
+    void returnsNotFoundWhenUploadingImageForNonExistentVariant() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "phone.jpg", "image/jpeg",
+                "bytes".getBytes(StandardCharsets.UTF_8));
+        when(deviceService.uploadVariantImage(eq(1L), eq(999L), any()))
+                .thenThrow(new com.phoneTech.demo.devices.exception.DeviceVariantNotFoundException(999L));
+
+        mockMvc.perform(multipart("/api/v1/devices/1/variants/999/image").file(file))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("Device variant not found: 999"));
     }
 
     @Test

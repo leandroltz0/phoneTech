@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -16,63 +17,142 @@ import {
   VarianteDispositivoMock,
 } from '@/components/dispositivos/DeviceVariantSheet';
 import {
-  COMPONENT_ISSUES,
   ComponentIssueSheet,
+  ComponentIssue,
 } from '@/components/dispositivos/ModuleIssueSheet';
 import { DetalleUnlockToolCard } from '@/components/detalle-proyecto/DetalleUnlockToolCard';
-import { dispositivosMock, verificarSoporteUnlockTool } from '@/data/dispositivosMock';
+import { mensajeDeError } from '@/services/api';
+import { obtenerDatosSeleccionDispositivo, urlImagenDispositivo } from '@/services/devices';
+import type { DiagnosisCategoryDto, DeviceSelectionDataDto } from '@/types/api';
 
 // ─── Categorías de fallas ────────────────────────────────────────────────────
 
-const CATEGORIAS_FALLAS = [
-  { id: 'modulo', label: 'Módulo / pantalla', description: 'Vidrio roto, sin imagen, líneas o fallas táctiles.' },
-  { id: 'bateria', label: 'Batería', description: 'Se descarga rápido, no carga bien o está hinchada.' },
-  { id: 'carga', label: 'Carga', description: 'Pin dañado, flex de carga o conexión intermitente.' },
-  { id: 'tapa', label: 'Tapa y carcasa', description: 'Tapa rota, marco doblado o carcasa dañada.' },
-  { id: 'camara', label: 'Cámara', description: 'Cámara que no funciona, lente o vidrio roto.' },
-  { id: 'audio', label: 'Audio', description: 'Parlante, auricular o micrófono sin funcionar.' },
-  { id: 'botones', label: 'Botones y flex', description: 'Encendido, volumen o flex sin respuesta.' },
-  { id: 'sim', label: 'SIM y conectividad', description: 'No reconoce SIM, problemas de señal o Wi-Fi.' },
-  { id: 'placa', label: 'Placa y otros', description: 'Fallos de placa, reinicios, humedad u otros daños internos.' },
-] as const;
+type CategoriaFallaId = string;
 
-type CategoriaFallaId = (typeof CATEGORIAS_FALLAS)[number]['id'];
-
-// ─── Variantes y estimaciones de reventa mock ────────────────────────────────
-
-const VARIANTES_MOCK: Record<string, VarianteDispositivoMock[]> = {
-  'samsung-a03': [
-    { id: 'a03-m', codigo: 'SM-A035M', ram: '4 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 150000, comun: true },
-    { id: 'a03-f', codigo: 'SM-A035F', ram: '3 GB RAM', almacenamiento: '32 GB almacenamiento', precio: 135000 },
-    { id: 'a03-g', codigo: 'SM-A035G', ram: '4 GB RAM', almacenamiento: '128 GB almacenamiento', precio: 165000 },
-    { id: 'a03-g-ds', codigo: 'SM-A035G/DS', ram: '4 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 150000 },
-  ],
-  'samsung-a10': [{ id: 'a10-m', codigo: 'SM-A105M', ram: '2 GB RAM', almacenamiento: '32 GB almacenamiento', precio: 95000, comun: true }],
-  'samsung-a14': [{ id: 'a14-m', codigo: 'SM-A145M', ram: '4 GB RAM', almacenamiento: '128 GB almacenamiento', precio: 180000, comun: true }],
-  'moto-e13': [{ id: 'e13', codigo: 'XT2345-5', ram: '2 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 105000, comun: true }],
-  'samsung-a04': [{ id: 'a04-m', codigo: 'SM-A045M', ram: '4 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 110000, comun: true }],
-  'moto-g22': [{ id: 'g22', codigo: 'XT2231-2', ram: '4 GB RAM', almacenamiento: '128 GB almacenamiento', precio: 150000, comun: true }],
-  'samsung-a12': [{ id: 'a12-m', codigo: 'SM-A125M', ram: '4 GB RAM', almacenamiento: '64 GB almacenamiento', precio: 130000, comun: true }],
-  'moto-g32': [{ id: 'g32', codigo: 'XT2235-2', ram: '4 GB RAM', almacenamiento: '128 GB almacenamiento', precio: 160000, comun: true }],
+type CategoriaFalla = {
+  id: CategoriaFallaId;
+  label: string;
+  description: string;
+  issues: ComponentIssue[];
 };
 
+function adaptarCategoriaFalla(category: DiagnosisCategoryDto): CategoriaFalla {
+  return {
+    // El backend actual devuelve null para algunos IDs de categoría; el code
+    // es estable y evita generar keys duplicadas mientras se corrige el DTO.
+    id: category.id === null ? category.code : String(category.id),
+    label: category.name,
+    description: category.description ?? 'Seleccioná una falla para este componente.',
+    issues: (category.issues ?? [])
+      .filter((issue) => issue.active !== false)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .map((issue) => ({
+        id: String(issue.id),
+        title: issue.name,
+        description: issue.description,
+      })),
+  };
+}
+
+function adaptarVariante(variant: DeviceSelectionDataDto['variants'][number]): VarianteDispositivoMock {
+  return {
+    id: String(variant.id),
+    codigo: variant.modelCode,
+    ram: variant.ramGb === null ? 'RAM no informada' : `${variant.ramGb} GB RAM`,
+    almacenamiento:
+      variant.storageGb === null
+        ? 'Almacenamiento no informado'
+        : `${variant.storageGb} GB almacenamiento`,
+    precio: variant.resaleEstimate?.amount ?? null,
+    comun: variant.isCommon,
+    imagenUri: urlImagenDispositivo(variant.imageUri),
+    unlockToolStatus: variant.unlockToolStatus,
+  };
+}
+
 export default function SeleccionarTelefonoScreen() {
-  const { dispositivoId } = useLocalSearchParams<{ dispositivoId: string }>();
+  const { dispositivoId: dispositivoIdParam } = useLocalSearchParams<{ dispositivoId?: string }>();
+  const dispositivoId = Array.isArray(dispositivoIdParam) ? dispositivoIdParam[0] : dispositivoIdParam;
+  const [datos, setDatos] = useState<DeviceSelectionDataDto | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [fallasSeleccionadas, setFallasSeleccionadas] = useState<Partial<Record<CategoriaFallaId, string>>>({});
   const [detallesExpandido, setDetallesExpandido] = useState(true);
   const [selectorVarianteVisible, setSelectorVarianteVisible] = useState(false);
   const [categoriaActivaId, setCategoriaActivaId] = useState<CategoriaFallaId>();
+  const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState<string>();
+  const [imagenesFallidas, setImagenesFallidas] = useState<Record<string, boolean>>({});
+  const dispositivoIdNumerico = dispositivoId ? Number(dispositivoId) : null;
+  const parametroError = !dispositivoId
+    ? 'No se recibió el dispositivo seleccionado.'
+    : !Number.isInteger(dispositivoIdNumerico)
+      ? 'El identificador del dispositivo no es válido.'
+      : null;
 
-  const dispositivo =
-    dispositivosMock.find((d) => d.id === dispositivoId) ?? dispositivosMock[0];
-  const variantes = VARIANTES_MOCK[dispositivo.id] ?? VARIANTES_MOCK['samsung-a03'];
-  const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState(variantes[0].id);
-  const infoVariante = variantes.find((variante) => variante.id === varianteSeleccionadaId) ?? variantes[0];
+  useEffect(() => {
+    if (parametroError || dispositivoIdNumerico === null) return;
 
-  const categoriaActiva = CATEGORIAS_FALLAS.find((cat) => cat.id === categoriaActivaId);
-  const fallasDetalladas = CATEGORIAS_FALLAS.flatMap((category) => {
+    let mounted = true;
+    void obtenerDatosSeleccionDispositivo(dispositivoIdNumerico)
+      .then((response) => {
+        if (!mounted) return;
+        setDatos(response);
+        setVarianteSeleccionadaId(response.variants[0] ? String(response.variants[0].id) : undefined);
+        setError(null);
+      })
+      .catch((requestError: unknown) => {
+        if (mounted) setError(mensajeDeError(requestError));
+      })
+      .finally(() => {
+        if (mounted) setCargando(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [dispositivoIdNumerico, parametroError]);
+
+  const errorParaMostrar = parametroError ?? error;
+
+  if (cargando && !errorParaMostrar) {
+    return (
+      <SafeAreaView style={styles.stateScreen}>
+        <ActivityIndicator color={Colors.primary} size="large" />
+        <Text style={styles.stateTitle}>Cargando información del teléfono...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (errorParaMostrar || !datos) {
+    return (
+      <SafeAreaView style={styles.stateScreen}>
+        <Ionicons name="cloud-offline-outline" size={42} color={Colors.textSecondary} />
+        <Text style={styles.stateTitle}>No pudimos cargar el teléfono</Text>
+        <Text style={styles.stateMessage}>{errorParaMostrar ?? 'No hay información disponible.'}</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.stateBackButton}>
+          <Text style={styles.stateBackButtonText}>Volver</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const dispositivo = datos.device;
+  const variantes = datos.variants.map(adaptarVariante);
+  const infoVariante = variantes.find((variant) => variant.id === varianteSeleccionadaId) ?? variantes[0];
+  const imagenDispositivoUri = urlImagenDispositivo(dispositivo.imageUri);
+  const imagenVarianteUri = infoVariante?.imagenUri ?? null;
+  const imagenPrincipalUri =
+    (imagenVarianteUri && !imagenesFallidas[imagenVarianteUri] ? imagenVarianteUri : null) ??
+    (imagenDispositivoUri && !imagenesFallidas[imagenDispositivoUri] ? imagenDispositivoUri : null);
+  const categoriasFallas = datos.diagnosisCategories
+    .filter((category) => category.active !== false)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map(adaptarCategoriaFalla);
+
+  const categoriaActiva = categoriasFallas.find((cat) => cat.id === categoriaActivaId);
+  const fallasDetalladas = categoriasFallas.flatMap((category) => {
     const issueId = fallasSeleccionadas[category.id];
-    const issue = COMPONENT_ISSUES[category.id].find((item) => item.id === issueId);
+    const issue = category.issues.find((item) => item.id === issueId);
     return issue ? [{ category, issue }] : [];
   });
   const fallasTotales = fallasDetalladas.length;
@@ -100,20 +180,31 @@ export default function SeleccionarTelefonoScreen() {
       >
         {/* ─── Vista previa del teléfono ──────────────────────────── */}
         <View style={styles.phoneArtworkContainer}>
-          <Image
-            source={require('@/assets/images/phone-preview-a03.png')}
-            style={styles.phoneArtworkImage}
-            resizeMode="contain"
-          />
+          {imagenPrincipalUri ? (
+            <Image
+              key={imagenPrincipalUri}
+              onError={() => setImagenesFallidas((current) => ({ ...current, [imagenPrincipalUri]: true }))}
+              source={{ uri: imagenPrincipalUri }}
+              style={styles.phoneArtworkImage}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.phonePlaceholder}>
+              <Ionicons name="phone-portrait-outline" size={58} color="#94A3B8" />
+            </View>
+          )}
         </View>
 
         {/* ─── Nombre del dispositivo ─────────────────────────────── */}
         <Text style={styles.deviceName}>
-          {dispositivo.marca} {dispositivo.modelo}
+          {dispositivo.brand} {dispositivo.commercialName}
         </Text>
 
         {/* ─── Soporte UnlockTool ─────────────────────────────────── */}
-        <DetalleUnlockToolCard supported={verificarSoporteUnlockTool(dispositivo)} />
+        <DetalleUnlockToolCard
+          displayName={datos.unlockTool.displayName}
+          status={infoVariante?.unlockToolStatus ?? datos.unlockTool.status}
+        />
 
         {/* ─── Card: Variante del dispositivo ─────────────────────── */}
         <TouchableOpacity
@@ -129,10 +220,16 @@ export default function SeleccionarTelefonoScreen() {
             </View>
             <View style={styles.variantTextWrapper}>
               <Text style={styles.variantKicker}>VARIANTE DEL DISPOSITIVO</Text>
-              <Text style={styles.variantCode}>{infoVariante.codigo}</Text>
-              <Text style={styles.variantSpecs}>
-                {infoVariante.ram} · {infoVariante.almacenamiento}
-              </Text>
+              {infoVariante ? (
+                <>
+                  <Text style={styles.variantCode}>{infoVariante.codigo}</Text>
+                  <Text style={styles.variantSpecs}>
+                    {infoVariante.ram} · {infoVariante.almacenamiento}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.variantSpecs}>Variante no informada</Text>
+              )}
             </View>
             <Ionicons name="chevron-down" size={20} color="#378CC4" />
           </View>
@@ -144,7 +241,9 @@ export default function SeleccionarTelefonoScreen() {
             <View style={styles.priceInfoWrapper}>
               <Text style={styles.priceLabel}>Precio de venta en buen estado</Text>
               <Text style={styles.priceValue}>
-                ${infoVariante.precio.toLocaleString('es-AR')}
+                {infoVariante?.precio == null
+                  ? 'No disponible'
+                  : `$${infoVariante.precio.toLocaleString('es-AR')}`}
               </Text>
               <View style={styles.estimationBadge}>
                 <Ionicons
@@ -195,7 +294,7 @@ export default function SeleccionarTelefonoScreen() {
               </Text>
 
               <View style={styles.gridContainer}>
-                {CATEGORIAS_FALLAS.map((cat) => {
+                {categoriasFallas.map((cat) => {
                   const isSelected = Boolean(fallasSeleccionadas[cat.id]);
                   return (
                     <TouchableOpacity
@@ -243,12 +342,16 @@ export default function SeleccionarTelefonoScreen() {
           <View style={styles.infoTextWrapper}>
             <Text style={styles.infoTitle}>
               {fallasTotales === 0
-                ? 'Sin fallas seleccionadas'
+                ? categoriasFallas.length === 0
+                  ? 'Diagnóstico no disponible'
+                  : 'Sin fallas seleccionadas'
                 : `${fallasTotales} falla${fallasTotales > 1 ? 's' : ''} seleccionada${fallasTotales > 1 ? 's' : ''}`}
             </Text>
             <Text style={styles.infoSubtitle}>
-              {fallasTotales === 0
-                ? 'Agregá los componentes con problemas para continuar con el diagnóstico.'
+              {categoriasFallas.length === 0
+                ? 'El backend todavía no devolvió categorías de diagnóstico para este dispositivo.'
+                : fallasTotales === 0
+                  ? 'Agregá los componentes con problemas para continuar con el diagnóstico.'
                 : `Componentes marcados: ${fallasTexto}`}
             </Text>
           </View>
@@ -277,8 +380,11 @@ export default function SeleccionarTelefonoScreen() {
             router.push({
               pathname: '/analisis-equipo',
               params: {
-                dispositivoId: dispositivo.id,
-                variante: `${infoVariante.codigo} · ${infoVariante.ram} / ${infoVariante.almacenamiento}`,
+                dispositivoId: String(dispositivo.id),
+                varianteId: infoVariante?.id,
+                variante: infoVariante
+                  ? `${infoVariante.codigo} · ${infoVariante.ram} / ${infoVariante.almacenamiento}`
+                  : undefined,
                 diagnostico: JSON.stringify(fallasDetalladas.map(({ category, issue }) => `${category.label}: ${issue.title}`)),
               },
             });
@@ -289,14 +395,14 @@ export default function SeleccionarTelefonoScreen() {
         </TouchableOpacity>
       </View>
 
-      {selectorVarianteVisible && (
+      {selectorVarianteVisible && variantes.length > 0 && (
         <DeviceVariantSheet
           onClose={() => setSelectorVarianteVisible(false)}
           onConfirm={(varianteId) => {
             setVarianteSeleccionadaId(varianteId);
             setSelectorVarianteVisible(false);
           }}
-          varianteSeleccionadaId={varianteSeleccionadaId}
+          varianteSeleccionadaId={varianteSeleccionadaId ?? ''}
           variantes={variantes}
           visible
         />
@@ -307,7 +413,7 @@ export default function SeleccionarTelefonoScreen() {
         componentLabel={categoriaActiva?.label ?? ''}
         componentDescription={categoriaActiva?.description ?? ''}
         issueId={categoriaActiva ? fallasSeleccionadas[categoriaActiva.id] : undefined}
-        issues={categoriaActiva ? COMPONENT_ISSUES[categoriaActiva.id] : []}
+        issues={categoriaActiva?.issues ?? []}
         onClose={() => setCategoriaActivaId(undefined)}
         onConfirm={(issueId) => {
           if (categoriaActiva) {
@@ -324,6 +430,38 @@ export default function SeleccionarTelefonoScreen() {
 // ─── Estilos ─────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  stateScreen: {
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  stateTitle: {
+    color: Colors.textMain,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 14,
+    textAlign: 'center',
+  },
+  stateMessage: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  stateBackButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 20,
+    marginTop: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 11,
+  },
+  stateBackButtonText: {
+    color: Colors.surface,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   safe: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -369,6 +507,14 @@ const styles = StyleSheet.create({
   phoneArtworkImage: {
     width: '100%',
     height: 146,
+  },
+  phonePlaceholder: {
+    alignItems: 'center',
+    backgroundColor: '#EAF2F8',
+    borderRadius: 22,
+    height: 118,
+    justifyContent: 'center',
+    width: 100,
   },
   deviceName: {
     color: '#10264C',

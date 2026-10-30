@@ -84,3 +84,58 @@ export interface DeviceDetailDto {
   imageUri: string | null;
   unlockToolStatus: UnlockToolSupportStatusDto;
 }
+
+export interface UnlockToolSupportDto {
+  status: UnlockToolSupportStatusDto;
+  displayName?: string | null;
+  description?: string | null;
+  methods?: string[];
+  lastVerifiedAt?: string | null;
+}
+
+export interface DeviceResaleEstimateDto {
+  condition: string;
+  amount: number;
+  currency: string;
+}
+
+export interface DeviceSelectionVariantDto {
+  id: number;
+  modelCode: string;
+  variantName?: string | null;
+  ramGb: number | null;
+  storageGb: number | null;
+  chipset?: string | null;
+  region?: string | null;
+  unlockToolStatus: UnlockToolSupportStatusDto;
+  imageUri?: string | null;
+  isCommon?: boolean;
+  resaleEstimate?: DeviceResaleEstimateDto | null;
+}
+
+export interface DiagnosisFaultDto {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export interface DiagnosisCategoryDto {
+  id: number | null;
+  code: string;
+  name: string;
+  description: string | null;
+  icon?: string | null;
+  sortOrder?: number;
+  active?: boolean;
+  issues: DiagnosisFaultDto[];
+}
+
+export interface DeviceSelectionDataDto {
+  device: DeviceSummaryDto;
+  unlockTool: UnlockToolSupportDto;
+  variants: DeviceSelectionVariantDto[];
+  diagnosisCategories: DiagnosisCategoryDto[];
+}

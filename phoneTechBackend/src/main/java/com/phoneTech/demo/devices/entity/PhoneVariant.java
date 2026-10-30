@@ -16,4 +16,5 @@ public class PhoneVariant {
  public String getVariantName(){return variantName;} public Short getRamGb(){return ramGb;} public Short getStorageGb(){return storageGb;}
  public String getChipset(){return chipset;} public String getRegion(){return region;} public UnlockToolSupportStatus getUnlockToolStatus(){return unlockToolStatus;}
  public boolean isActive(){return active;} public String getImageUri(){return imageUri;}
+ public void updateImageUri(String imageUri){this.imageUri=imageUri;}
 }

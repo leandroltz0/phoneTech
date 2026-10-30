@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,14 +11,17 @@ import {
 } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { SelectionSheet } from '@/components/dispositivos/SelectionSheet';
+import type { UnlockToolSupportStatusDto } from '@/types/api';
 
 export type VarianteDispositivoMock = {
   id: string;
   codigo: string;
   ram: string;
   almacenamiento: string;
-  precio: number;
+  precio: number | null;
   comun?: boolean;
+  imagenUri?: string | null;
+  unlockToolStatus?: UnlockToolSupportStatusDto;
 };
 
 type DeviceVariantSheetProps = {
@@ -117,10 +121,20 @@ export function DeviceVariantSheet({
                   onPress={() => setSeleccionTemporal(variante.id)}
                   style={[styles.option, isSelected && styles.optionSelected]}
                 >
-                  <View style={[styles.phonePreview, variante.id.includes('f') && styles.phonePreviewBlue, variante.id.includes('g') && styles.phonePreviewRed]}>
-                    <View style={styles.cameraDot} />
-                    <View style={[styles.cameraDot, styles.lowerCameraDot]} />
-                    <View style={styles.phoneScreen} />
+                  <View style={styles.phonePreview}>
+                    {variante.imagenUri ? (
+                      <Image
+                        source={{ uri: variante.imagenUri }}
+                        style={styles.variantImage}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <>
+                        <View style={styles.cameraDot} />
+                        <View style={[styles.cameraDot, styles.lowerCameraDot]} />
+                        <View style={styles.phoneScreen} />
+                      </>
+                    )}
                   </View>
                   <View style={styles.optionCopy}>
                     <Text style={styles.optionCode}>{variante.codigo}</Text>
@@ -186,8 +200,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: 48,
   },
-  phonePreviewBlue: { backgroundColor: '#1A569D' },
-  phonePreviewRed: { backgroundColor: '#A61932' },
+  variantImage: { height: '100%', width: '100%' },
   cameraDot: { backgroundColor: '#050C17', borderColor: '#536071', borderRadius: 5, borderWidth: 1, height: 10, left: 5, position: 'absolute', top: 7, width: 10 },
   lowerCameraDot: { top: 21 },
   phoneScreen: { backgroundColor: '#7EB4FE', borderTopLeftRadius: 4, bottom: 3, position: 'absolute', right: 3, top: 3, width: 22 },

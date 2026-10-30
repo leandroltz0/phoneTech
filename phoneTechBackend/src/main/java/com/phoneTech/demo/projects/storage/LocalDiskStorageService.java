@@ -26,8 +26,15 @@ public class LocalDiskStorageService implements StorageService {
 
     @Override
     public String store(MultipartFile file, String extension) {
+        return store(file, extension, "");
+    }
+
+    @Override
+    public String store(MultipartFile file, String extension, String relativeDirectory) {
         String fileName = UUID.randomUUID() + "." + extension;
-        Path target = rootDirectory.resolve(fileName);
+        Path directory = resolveDirectory(relativeDirectory);
+        createDirectory(directory);
+        Path target = directory.resolve(fileName);
         try {
             file.transferTo(target);
         } catch (IOException e) {
@@ -38,18 +45,35 @@ public class LocalDiskStorageService implements StorageService {
 
     @Override
     public void delete(String fileName) {
+        delete("", fileName);
+    }
+
+    @Override
+    public void delete(String relativeDirectory, String fileName) {
         try {
-            Files.deleteIfExists(rootDirectory.resolve(fileName));
+            Files.deleteIfExists(resolveDirectory(relativeDirectory).resolve(fileName));
         } catch (IOException e) {
             logger.warn("Could not delete stored image {}: {}", fileName, e.getMessage());
         }
     }
 
     private void createRootDirectory() {
+        createDirectory(rootDirectory);
+    }
+
+    private void createDirectory(Path directory) {
         try {
-            Files.createDirectories(rootDirectory);
+            Files.createDirectories(directory);
         } catch (IOException e) {
-            throw new IllegalStateException("Could not create upload directory " + rootDirectory, e);
+            throw new IllegalStateException("Could not create upload directory " + directory, e);
         }
+    }
+
+    private Path resolveDirectory(String relativeDirectory) {
+        Path directory = rootDirectory.resolve(relativeDirectory == null ? "" : relativeDirectory).normalize();
+        if (!directory.startsWith(rootDirectory)) {
+            throw new IllegalArgumentException("Invalid storage directory");
+        }
+        return directory;
     }
 }

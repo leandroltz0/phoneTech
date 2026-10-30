@@ -3,9 +3,12 @@ import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { UnlockToolSupportBadge } from '@/components/dispositivos/UnlockToolSupportBadge';
+import type { UnlockToolSupportStatusDto } from '@/types/api';
 
 interface Props {
-  supported: boolean;
+  supported?: boolean;
+  status?: UnlockToolSupportStatusDto;
+  displayName?: string | null;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -13,10 +16,20 @@ interface Props {
  * Mini componente contenedor independiente para mostrar el soporte
  * de UnlockTool del dispositivo justo debajo del encabezado.
  */
-export const DetalleUnlockToolCard = ({ supported, style }: Props) => {
+export const DetalleUnlockToolCard = ({ supported, status, displayName, style }: Props) => {
+  const isSupported = status !== undefined ? status === 'SUPPORTED' : Boolean(supported);
+  const isUnknown = status === 'UNKNOWN';
+  const subtitle = displayName ?? (
+    isSupported
+      ? 'Compatible con este modelo'
+      : isUnknown
+        ? 'Compatibilidad sin verificar'
+        : 'Sin soporte para este modelo'
+  );
+
   return (
     <View
-      accessibilityLabel={`Soporte UnlockTool: ${supported ? 'Compatible' : 'Sin soporte'}`}
+      accessibilityLabel={`Soporte UnlockTool: ${subtitle}`}
       accessibilityRole="summary"
       style={[styles.card, style]}
     >
@@ -24,12 +37,12 @@ export const DetalleUnlockToolCard = ({ supported, style }: Props) => {
         <View
           style={[
             styles.iconWrapper,
-            supported ? styles.iconWrapperSupported : styles.iconWrapperUnsupported,
+            isSupported ? styles.iconWrapperSupported : styles.iconWrapperUnsupported,
           ]}
         >
           <Ionicons
-            color={supported ? '#27866E' : '#718398'}
-            name={supported ? 'shield-checkmark' : 'shield-outline'}
+            color={isSupported ? '#27866E' : '#718398'}
+            name={isSupported ? 'shield-checkmark' : 'shield-outline'}
             size={16}
           />
         </View>
@@ -37,12 +50,12 @@ export const DetalleUnlockToolCard = ({ supported, style }: Props) => {
         <View style={styles.textGroup}>
           <Text style={styles.title}>UnlockTool</Text>
           <Text style={styles.subtitle} numberOfLines={1}>
-            {supported ? 'Compatible con este modelo' : 'Sin soporte para este modelo'}
+            {subtitle}
           </Text>
         </View>
       </View>
 
-      <UnlockToolSupportBadge supported={supported} style={styles.badge} />
+      <UnlockToolSupportBadge status={status} supported={supported} style={styles.badge} />
     </View>
   );
 };

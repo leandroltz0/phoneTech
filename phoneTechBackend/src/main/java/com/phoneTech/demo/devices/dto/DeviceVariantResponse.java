@@ -8,6 +8,11 @@ public record DeviceVariantResponse(
         String ram,
         String storage,
         BigDecimal resalePrice,
-        Boolean isCommon
+        Boolean isCommon,
+        String imageUri
 ) {
+    public DeviceVariantResponse(Long id, String code, String ram, String storage,
+                                 BigDecimal resalePrice, Boolean isCommon) {
+        this(id, code, ram, storage, resalePrice, isCommon, null);
+    }
 }

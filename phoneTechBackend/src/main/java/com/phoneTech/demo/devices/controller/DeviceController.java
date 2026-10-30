@@ -4,6 +4,7 @@ import com.phoneTech.demo.devices.dto.DeviceDetailResponse;
 import com.phoneTech.demo.devices.dto.DevicePageResponse;
 import com.phoneTech.demo.devices.dto.DeviceVariantResponse;
 import com.phoneTech.demo.devices.dto.DeviceSelectionDataResponse;
+import com.phoneTech.demo.devices.dto.SelectionVariantResponse;
 import com.phoneTech.demo.devices.dto.UnlockToolSupportResponse;
 import com.phoneTech.demo.devices.service.DeviceService;
 import org.springframework.http.MediaType;
@@ -44,6 +45,14 @@ public class DeviceController {
     @GetMapping("/{id}/variants")
     public ResponseEntity<List<DeviceVariantResponse>> getDeviceVariants(@PathVariable Long id) {
         return ResponseEntity.ok(deviceService.getDeviceVariants(id));
+    }
+
+    @PostMapping(value = "/{deviceId}/variants/{variantId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SelectionVariantResponse> uploadVariantImage(
+            @PathVariable Long deviceId,
+            @PathVariable Long variantId,
+            @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(deviceService.uploadVariantImage(deviceId, variantId, file));
     }
 
     @GetMapping("/{id}/selection-data")

@@ -3,6 +3,8 @@ package com.phoneTech.demo.devices.controller;
 import com.phoneTech.demo.devices.dto.DeviceDetailResponse;
 import com.phoneTech.demo.devices.dto.DevicePageResponse;
 import com.phoneTech.demo.devices.dto.DeviceVariantResponse;
+import com.phoneTech.demo.devices.dto.DeviceSelectionDataResponse;
+import com.phoneTech.demo.devices.dto.UnlockToolSupportResponse;
 import com.phoneTech.demo.devices.service.DeviceService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +44,16 @@ public class DeviceController {
     @GetMapping("/{id}/variants")
     public ResponseEntity<List<DeviceVariantResponse>> getDeviceVariants(@PathVariable Long id) {
         return ResponseEntity.ok(deviceService.getDeviceVariants(id));
+    }
+
+    @GetMapping("/{id}/selection-data")
+    public ResponseEntity<DeviceSelectionDataResponse> getSelectionData(@PathVariable Long id) {
+        return ResponseEntity.ok(deviceService.getSelectionData(id));
+    }
+
+    @GetMapping("/{id}/unlock-tool-support")
+    public ResponseEntity<UnlockToolSupportResponse> getUnlockToolSupport(@PathVariable Long id) {
+        return ResponseEntity.ok(deviceService.getUnlockToolSupport(id));
     }
 
     @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -246,4 +246,70 @@ El esquema de proyectos y diagnósticos está definido y se ha preparado una pru
 El catálogo de dispositivos (paquete devices, endpoints GET /api/v1/devices y /{id}) está implementado en Java con tests unitarios sobre la tabla phone_models; la tabla y la semilla se crean manualmente en pgAdmin 4 con el SQL acordado (no está en el repo). Hasta crearla, los endpoints de dispositivos fallarán al arrancar la aplicación por ddl-auto: validate. La semilla trae 3 modelos con soporte UNKNOWN y sin URLs de imagen: esos datos quedan pendientes de completar en PostgreSQL.
 
 El alcance de los endpoints de proyectos debe mantenerse acotado a los datos que existen actualmente. El almacenamiento de variante, costes, precio de compra/venta y ganancia real requiere verificar o ampliar el modelo antes de exponer esos datos.
+
+## 13. Catálogo de proveedores y repuestos
+
+La etapa 1 del sistema de costos está implementada en el paquete `parts` y utiliza las tablas `suppliers`, `spare_parts`, `supplier_spare_parts` y `diagnostic_fault_parts`.
+
+El flujo de consulta es:
+
+```text
+diagnostic_fault_catalog
+  -> diagnostic_fault_parts
+  -> spare_parts
+  -> supplier_spare_parts
+  -> suppliers
+```
+
+Los precios vigentes se almacenan en `supplier_spare_parts.purchase_price` como `NUMERIC(14,2)` y se representan con `BigDecimal`. Por ahora los repuestos no se relacionan con modelos o variantes de celulares.
+
+Endpoints implementados:
+
+- `GET/POST /api/v1/suppliers`
+- `GET/PUT /api/v1/suppliers/{id}`
+- `PATCH /api/v1/suppliers/{id}/status`
+- `GET /api/v1/suppliers/{id}/offers`
+- `GET/POST /api/v1/spare-parts`
+- `GET/PUT /api/v1/spare-parts/{id}`
+- `GET /api/v1/spare-parts/{id}/suppliers`
+- `POST /api/v1/supplier-spare-parts`
+- `PUT /api/v1/supplier-spare-parts/{id}`
+- `GET /api/v1/diagnostic-faults/{faultId}/parts`
+- `POST /api/v1/diagnostic-faults/parts`
+
+La etapa de costos históricos por proyecto (`project_spare_parts`) y el cálculo de rentabilidad todavía no están implementados.
 Regla general: verificar primero, implementar lo necesario, probarlo y reportar con honestidad qué funciona y qué queda pendiente. No presentar una suposición como resultado comprobado.
+
+## 14. Cálculo del precio máximo de compra
+
+El endpoint `POST /api/v1/repair-price-calculations` recibe:
+
+```json
+{
+  "deviceId": 1,
+  "variantId": 101,
+  "faultIds": [5, 6],
+  "saleCondition": "GOOD"
+}
+```
+
+El service valida que la variante pertenezca al dispositivo, obtiene el precio de venta de `phone_variant_prices` para la condición indicada y consulta los repuestos asociados a las fallas. Las relaciones específicas de una variante tienen prioridad sobre las relaciones genéricas. Si un mismo repuesto resuelve varias fallas, se cuenta una sola vez y se utiliza la cantidad máxima configurada.
+
+Para cada repuesto se selecciona la oferta vigente más económica del proveedor activo en la misma moneda del precio de venta. Si falta una relación, un precio de venta o una oferta vigente, el cálculo se devuelve como no disponible; nunca se interpreta el costo faltante como cero.
+
+La fórmula implementada es:
+
+```text
+precioMáximoDeCompra = precioDeVenta - costoDeRepuestos - 25.000
+gananciaProyectada = precioDeVenta - costoDeRepuestos - precioMáximoDeCompra
+```
+
+La ganancia mínima está fija en `25.000 ARS`. Si incluso comprando el dispositivo a `0` no se alcanza esa ganancia, `purchaseAllowed` devuelve `false`.
+
+La implementación requiere agregar la columna nullable `phone_variant_id` a `diagnostic_fault_parts`. El cambio de esquema queda pendiente de ejecución manual por el propietario en pgAdmin 4. Hasta ejecutar ese SQL y reiniciar el backend, `ddl-auto: validate` no permitirá iniciar la aplicación con esta versión.
+
+`faultIds` puede ser una lista vacía. En ese caso representa un dispositivo sin reparaciones configuradas y el cálculo utiliza costo de repuestos `0`; el precio máximo queda determinado por `precioDeVenta - 25.000`.
+
+`saleCondition` es opcional y por defecto es `GOOD`. Los valores aceptados son `EXCELLENT`, `GOOD`, `FAIR` y `DAMAGED`. Un valor diferente devuelve `400 Bad Request`. `deviceId` y `variantId` son obligatorios; la variante debe pertenecer al dispositivo indicado. Un `faultId` inexistente o inactivo devuelve `422 Unprocessable Entity`.
+
+La respuesta no incluye todavía `calculationId` porque el cálculo es stateless y no existe una tabla de evaluaciones persistidas. Ese identificador se incorporará junto con la persistencia real de evaluaciones o proyectos; no se genera un ID temporal que luego no pueda consultarse.

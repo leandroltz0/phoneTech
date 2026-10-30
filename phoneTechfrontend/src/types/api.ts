@@ -129,6 +129,7 @@ export interface DiagnosisFaultDto {
   code: string;
   name: string;
   description: string;
+  imageUri?: string | null;
   sortOrder?: number;
   active?: boolean;
 }
@@ -141,7 +142,28 @@ export interface DiagnosisCategoryDto {
   icon?: string | null;
   sortOrder?: number;
   active?: boolean;
-  issues: DiagnosisFaultDto[];
+  faults: DiagnosisFaultDto[];
+}
+
+export type SaleConditionDto = 'EXCELLENT' | 'GOOD' | 'FAIR' | 'DAMAGED';
+
+export interface RepairPriceCalculationRequestDto {
+  deviceId: number;
+  variantId: number;
+  faultIds: number[];
+  saleCondition?: SaleConditionDto;
+}
+
+export interface RepairPriceCalculationResponseDto {
+  deviceId: number;
+  variantId: number;
+  resalePrice: number;
+  repairPartsCost: number;
+  minimumProfit: number;
+  maximumPurchasePrice: number;
+  projectedProfit: number;
+  purchaseAllowed: boolean;
+  currency?: string;
 }
 
 export interface DeviceSelectionDataDto {

@@ -1,4 +1,5 @@
 import type {
+  DiagnosisCategoryDto,
   DeviceDetailDto,
   DevicePageDto,
   DeviceSelectionDataDto,
@@ -56,6 +57,11 @@ export function obtenerVariantesDispositivo(
   deviceId: number,
 ): Promise<DeviceVariantDto[]> {
   return pedirJson<DeviceVariantDto[]>(`/api/v1/devices/${deviceId}/variants`);
+}
+
+/** GET /api/v1/diagnosis/categories */
+export function obtenerCategoriasDiagnostico(): Promise<DiagnosisCategoryDto[]> {
+  return pedirJson<DiagnosisCategoryDto[]>('/api/v1/diagnosis/categories');
 }
 
 /** POST /api/v1/devices/{id}/image (multipart/form-data) */

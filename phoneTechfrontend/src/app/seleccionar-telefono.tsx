@@ -17,7 +17,6 @@ import {
   VarianteDispositivoMock,
 } from '@/components/dispositivos/DeviceVariantSheet';
 import {
-  COMPONENT_ISSUES,
   ComponentIssueSheet,
   ComponentIssue,
 } from '@/components/dispositivos/ModuleIssueSheet';
@@ -25,9 +24,11 @@ import { DetalleUnlockToolCard } from '@/components/detalle-proyecto/DetalleUnlo
 import { mensajeDeError } from '@/services/api';
 import {
   obtenerDatosSeleccionDispositivo,
+  obtenerCategoriasDiagnostico,
   obtenerVariantesDispositivo,
   urlImagenDispositivo,
 } from '@/services/devices';
+import { calcularPrecioReparacion } from '@/services/repairPriceCalculations';
 import type {
   DeviceSelectionDataDto,
   DeviceVariantDto,
@@ -56,6 +57,18 @@ type CategoriaFalla = {
   issues: ComponentIssue[];
 };
 
+const CODIGOS_CATEGORIA_BACKEND: Record<CategoriaFallaId, string> = {
+  modulo: 'MODULE',
+  bateria: 'BATTERY',
+  carga: 'CHARGING',
+  tapa: 'BACK_COVER',
+  camara: 'CAMERA',
+  audio: 'AUDIO',
+  botones: 'BUTTONS',
+  sim: 'SIM_CONNECTIVITY',
+  placa: 'BOARD',
+};
+
 function adaptarVariante(variant: DeviceSelectionDataDto['variants'][number]): VarianteDispositivoMock {
   return {
     id: String(variant.id),
@@ -70,6 +83,19 @@ function adaptarVariante(variant: DeviceSelectionDataDto['variants'][number]): V
     imagenUri: urlImagenDispositivo(variant.imageUri),
     unlockToolStatus: variant.unlockToolStatus,
     nombreVariante: variant.variantName,
+  };
+}
+
+function adaptarFallaDiagnostico(fault: {
+  id: number;
+  name: string;
+  description: string;
+}): ComponentIssue {
+  return {
+    id: String(fault.id),
+    faultId: fault.id,
+    title: fault.name,
+    description: fault.description,
   };
 }
 
@@ -94,12 +120,16 @@ export default function SeleccionarTelefonoScreen() {
   const { dispositivoId: dispositivoIdParam } = useLocalSearchParams<{ dispositivoId?: string }>();
   const dispositivoId = Array.isArray(dispositivoIdParam) ? dispositivoIdParam[0] : dispositivoIdParam;
   const [datos, setDatos] = useState<DeviceSelectionDataDto | null>(null);
+  const [categoriasBackend, setCategoriasBackend] = useState<DeviceSelectionDataDto['diagnosisCategories']>([]);
+  const [errorCategorias, setErrorCategorias] = useState<string | null>(null);
   const [variantes, setVariantes] = useState<VarianteDispositivoMock[]>([]);
   const [cargandoVariantes, setCargandoVariantes] = useState(false);
   const [errorVariantes, setErrorVariantes] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fallasSeleccionadas, setFallasSeleccionadas] = useState<Partial<Record<CategoriaFallaId, string>>>({});
+  const [fallasSeleccionadas, setFallasSeleccionadas] = useState<Partial<Record<CategoriaFallaId, ComponentIssue>>>({});
+  const [enviandoEvaluacion, setEnviandoEvaluacion] = useState(false);
+  const [errorEvaluacion, setErrorEvaluacion] = useState<string | null>(null);
   const [detallesExpandido, setDetallesExpandido] = useState(true);
   const [selectorVarianteVisible, setSelectorVarianteVisible] = useState(false);
   const [categoriaActivaId, setCategoriaActivaId] = useState<CategoriaFallaId>();
@@ -135,6 +165,23 @@ export default function SeleccionarTelefonoScreen() {
       mounted = false;
     };
   }, [dispositivoIdNumerico, parametroError]);
+
+  useEffect(() => {
+    let mounted = true;
+    void obtenerCategoriasDiagnostico()
+      .then((response) => {
+        if (!mounted) return;
+        setCategoriasBackend(response);
+        setErrorCategorias(null);
+      })
+      .catch((requestError: unknown) => {
+        if (mounted) setErrorCategorias(mensajeDeError(requestError));
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const abrirSelectorVariantes = async () => {
     if (dispositivoIdNumerico === null) return;
@@ -193,19 +240,69 @@ export default function SeleccionarTelefonoScreen() {
   const imagenPrincipalUri =
     (imagenVarianteUri && !imagenesFallidas[imagenVarianteUri] ? imagenVarianteUri : null) ??
     (imagenDispositivoUri && !imagenesFallidas[imagenDispositivoUri] ? imagenDispositivoUri : null);
-  const categoriasFallas: CategoriaFalla[] = CATEGORIAS_FALLAS.map((category) => ({
-    ...category,
-    issues: COMPONENT_ISSUES[category.id] ?? [],
-  }));
+  const categoriasFallas: CategoriaFalla[] = CATEGORIAS_FALLAS.map((category) => {
+    const backendCategory = categoriasBackend.find(
+      (candidate) => candidate.code === CODIGOS_CATEGORIA_BACKEND[category.id],
+    );
+    return {
+      ...category,
+      issues: backendCategory?.faults
+        .filter((fault) => fault.active !== false)
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        .map(adaptarFallaDiagnostico) ?? [],
+    };
+  });
 
   const categoriaActiva = categoriasFallas.find((cat) => cat.id === categoriaActivaId);
   const fallasDetalladas = categoriasFallas.flatMap((category) => {
-    const issueId = fallasSeleccionadas[category.id];
-    const issue = category.issues.find((item) => item.id === issueId);
+    const issue = fallasSeleccionadas[category.id];
     return issue ? [{ category, issue }] : [];
   });
   const fallasTotales = fallasDetalladas.length;
   const fallasTexto = fallasDetalladas.map(({ category }) => category.label).join(', ');
+
+  const continuarConEvaluacion = async () => {
+    if (dispositivoIdNumerico === null || !infoVariante) {
+      setErrorEvaluacion('Seleccioná una variante antes de continuar.');
+      return;
+    }
+
+    const faultIds = fallasDetalladas
+      .map(({ issue }) => issue.faultId)
+      .filter((faultId): faultId is number => faultId !== undefined);
+
+    if (faultIds.length !== fallasDetalladas.length) {
+      setErrorEvaluacion('Una de las fallas seleccionadas no tiene un identificador válido.');
+      return;
+    }
+
+    setEnviandoEvaluacion(true);
+    setErrorEvaluacion(null);
+
+    try {
+      const evaluacion = await calcularPrecioReparacion({
+        deviceId: dispositivoIdNumerico,
+        variantId: Number(infoVariante.id),
+        faultIds,
+        saleCondition: 'GOOD',
+      });
+
+      router.push({
+        pathname: '/analisis-equipo',
+        params: {
+          dispositivoId: String(dispositivo.id),
+          varianteId: infoVariante.id,
+          variante: `${infoVariante.codigo} · ${infoVariante.ram} / ${infoVariante.almacenamiento}`,
+          diagnostico: JSON.stringify(fallasDetalladas.map(({ category, issue }) => `${category.label}: ${issue.title}`)),
+          evaluacion: JSON.stringify(evaluacion),
+        },
+      });
+    } catch (requestError: unknown) {
+      setErrorEvaluacion(mensajeDeError(requestError));
+    } finally {
+      setEnviandoEvaluacion(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -341,6 +438,11 @@ export default function SeleccionarTelefonoScreen() {
               <Text style={styles.detallesSubtitle}>
                 Seleccioná los componentes que presentan fallas
               </Text>
+              {errorCategorias && (
+                <Text style={styles.inlineError}>
+                  No se pudieron cargar las fallas disponibles: {errorCategorias}
+                </Text>
+              )}
 
               <View style={styles.gridContainer}>
                 {categoriasFallas.map((cat) => {
@@ -423,23 +525,17 @@ export default function SeleccionarTelefonoScreen() {
         <TouchableOpacity
           accessibilityRole="button"
           activeOpacity={0.88}
-          onPress={() => {
-            router.push({
-              pathname: '/analisis-equipo',
-              params: {
-                dispositivoId: String(dispositivo.id),
-                varianteId: infoVariante?.id,
-                variante: infoVariante
-                  ? `${infoVariante.codigo} · ${infoVariante.ram} / ${infoVariante.almacenamiento}`
-                  : undefined,
-                diagnostico: JSON.stringify(fallasDetalladas.map(({ category, issue }) => `${category.label}: ${issue.title}`)),
-              },
-            });
-          }}
+          disabled={enviandoEvaluacion}
+          onPress={() => void continuarConEvaluacion()}
           style={styles.continueButton}
         >
-          <Text style={styles.continueButtonText}>Continuar</Text>
+          {enviandoEvaluacion ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.continueButtonText}>Continuar</Text>
+          )}
         </TouchableOpacity>
+        {errorEvaluacion && <Text style={styles.footerError}>{errorEvaluacion}</Text>}
       </View>
 
       {selectorVarianteVisible && (
@@ -461,12 +557,15 @@ export default function SeleccionarTelefonoScreen() {
         key={`${categoriaActivaId ?? 'none'}-${categoriaActiva ? fallasSeleccionadas[categoriaActiva.id] ?? 'none' : 'none'}`}
         componentLabel={categoriaActiva?.label ?? ''}
         componentDescription={categoriaActiva?.description ?? ''}
-        issueId={categoriaActiva ? fallasSeleccionadas[categoriaActiva.id] : undefined}
+        issueId={categoriaActiva ? fallasSeleccionadas[categoriaActiva.id]?.id : undefined}
         issues={categoriaActiva?.issues ?? []}
         onClose={() => setCategoriaActivaId(undefined)}
         onConfirm={(issueId) => {
           if (categoriaActiva) {
-            setFallasSeleccionadas((previous) => ({ ...previous, [categoriaActiva.id]: issueId }));
+            const issue = categoriaActiva.issues.find((item) => item.id === issueId);
+            if (issue) {
+              setFallasSeleccionadas((previous) => ({ ...previous, [categoriaActiva.id]: issue }));
+            }
           }
           setCategoriaActivaId(undefined);
         }}
@@ -715,6 +814,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 12,
   },
+  inlineError: {
+    color: '#B42318',
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 8,
+  },
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -826,5 +931,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  footerError: {
+    color: '#B42318',
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 7,
+    textAlign: 'center',
   },
 });

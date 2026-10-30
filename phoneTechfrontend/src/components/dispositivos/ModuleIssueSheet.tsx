@@ -12,6 +12,7 @@ import { SelectionSheet } from '@/components/dispositivos/SelectionSheet';
 
 export type ComponentIssue = {
   id: string;
+  faultId?: number;
   title: string;
   description: string;
 };

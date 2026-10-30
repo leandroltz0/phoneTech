@@ -6,6 +6,7 @@ import com.phoneTech.demo.projects.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.time.ZoneId;
 
 @Service
 public class ProjectService {
@@ -25,14 +26,14 @@ public class ProjectService {
     private ProjectResponse toResponse(Project project) {
         return new ProjectResponse(
                 project.getId(),
-                project.getProjectNumber(),
+                project.getProjectNumber().intValue(),
                 project.getPhoneModel(),
                 project.getVariant(),
                 project.getDiagnosis(),
                 project.getEstimatedProfit(),
                 project.getActualProfit(),
                 project.getStatus(),
-                project.getCreatedAt()
+                project.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDateTime()
         );
     }
 }

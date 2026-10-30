@@ -29,6 +29,9 @@ public class SparePart {
     @Column(columnDefinition = "text")
     private String description;
 
+    @Column(name = "image_uri", columnDefinition = "text")
+    private String imageUri;
+
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
@@ -42,20 +45,30 @@ public class SparePart {
     }
 
     public SparePart(String partCode, String name, String componentCode, String description) {
+        this(partCode, name, componentCode, description, null);
+    }
+
+    public SparePart(String partCode, String name, String componentCode, String description, String imageUri) {
         this.partCode = partCode;
         this.name = name;
         this.componentCode = componentCode;
         this.description = description;
+        this.imageUri = imageUri;
         this.active = true;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }
 
     public void update(String partCode, String name, String componentCode, String description) {
+        update(partCode, name, componentCode, description, imageUri);
+    }
+
+    public void update(String partCode, String name, String componentCode, String description, String imageUri) {
         this.partCode = partCode;
         this.name = name;
         this.componentCode = componentCode;
         this.description = description;
+        this.imageUri = imageUri;
         this.updatedAt = Instant.now();
     }
 
@@ -64,6 +77,7 @@ public class SparePart {
     public String getName() { return name; }
     public String getComponentCode() { return componentCode; }
     public String getDescription() { return description; }
+    public String getImageUri() { return imageUri; }
     public boolean isActive() { return active; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

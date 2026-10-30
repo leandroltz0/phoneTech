@@ -103,13 +103,14 @@ public class PartsCatalogService {
     @Transactional
     public SparePartResponse createSparePart(CreateSparePartRequest request) {
         return sparePartResponse(spareParts.save(new SparePart(request.partCode(), request.name().trim(),
-                request.componentCode(), request.description())));
+                request.componentCode(), request.description(), request.imageUri())));
     }
 
     @Transactional
     public SparePartResponse updateSparePart(Long id, CreateSparePartRequest request) {
         SparePart sparePart = findSparePart(id);
-        sparePart.update(request.partCode(), request.name().trim(), request.componentCode(), request.description());
+        sparePart.update(request.partCode(), request.name().trim(), request.componentCode(), request.description(),
+                request.imageUri() == null ? sparePart.getImageUri() : request.imageUri());
         return sparePartResponse(spareParts.save(sparePart));
     }
 
@@ -210,7 +211,7 @@ public class PartsCatalogService {
 
     private SparePartResponse sparePartResponse(SparePart p) {
         return new SparePartResponse(p.getId(), p.getPartCode(), p.getName(), p.getComponentCode(),
-                p.getDescription(), p.isActive(), p.getCreatedAt(), p.getUpdatedAt());
+                p.getDescription(), p.getImageUri(), p.isActive(), p.getCreatedAt(), p.getUpdatedAt());
     }
 
     private SupplierSparePartResponse offerResponse(SupplierSparePart o) {

@@ -6,6 +6,8 @@ import java.util.List;
 public record RepairPartCostResponse(
         Long sparePartId,
         String sparePartName,
+        String sparePartDescription,
+        String imageUri,
         List<Long> faultIds,
         int quantity,
         BigDecimal unitCost,

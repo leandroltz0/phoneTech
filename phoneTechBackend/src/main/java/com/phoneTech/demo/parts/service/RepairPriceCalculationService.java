@@ -109,7 +109,8 @@ public class RepairPriceCalculationService {
             BigDecimal total = offer.getPurchasePrice().multiply(BigDecimal.valueOf(requirement.quantity()));
             repairsTotal = repairsTotal.add(total);
             partCosts.add(new RepairPartCostResponse(
-                    requirement.sparePartId(), requirement.sparePartName(), requirement.faultIds(),
+                    requirement.sparePartId(), requirement.sparePartName(), requirement.sparePartDescription(),
+                    requirement.imageUri(), requirement.faultIds(),
                     requirement.quantity(), offer.getPurchasePrice(), total, offer.getCurrency(),
                     offer.getId(), offer.getSupplier().getId(), offer.getSupplier().getName()));
         }
@@ -177,7 +178,8 @@ public class RepairPriceCalculationService {
             for (DiagnosticFaultPart relation : faultRelations) {
                 Long partId = relation.getSparePart().getId();
                 PartRequirementBuilder builder = builders.computeIfAbsent(partId,
-                        ignored -> new PartRequirementBuilder(partId, relation.getSparePart().getName()));
+                        ignored -> new PartRequirementBuilder(partId, relation.getSparePart().getName(),
+                                relation.getSparePart().getDescription(), relation.getSparePart().getImageUri()));
                 builder.quantity = Math.max(builder.quantity, relation.getQuantity());
                 builder.faultIds.add(entry.getKey());
             }
@@ -208,21 +210,28 @@ public class RepairPriceCalculationService {
         return normalized;
     }
 
-    private record PartRequirement(Long sparePartId, String sparePartName, int quantity, List<Long> faultIds) { }
+    private record PartRequirement(Long sparePartId, String sparePartName, String sparePartDescription,
+                                   String imageUri, int quantity, List<Long> faultIds) { }
 
     private static final class PartRequirementBuilder {
         private final Long sparePartId;
         private final String sparePartName;
+        private final String sparePartDescription;
+        private final String imageUri;
         private final Set<Long> faultIds = new LinkedHashSet<>();
         private int quantity;
 
-        private PartRequirementBuilder(Long sparePartId, String sparePartName) {
+        private PartRequirementBuilder(Long sparePartId, String sparePartName,
+                                       String sparePartDescription, String imageUri) {
             this.sparePartId = sparePartId;
             this.sparePartName = sparePartName;
+            this.sparePartDescription = sparePartDescription;
+            this.imageUri = imageUri;
         }
 
         private PartRequirement build() {
-            return new PartRequirement(sparePartId, sparePartName, quantity, faultIds.stream().toList());
+            return new PartRequirement(sparePartId, sparePartName, sparePartDescription, imageUri,
+                    quantity, faultIds.stream().toList());
         }
     }
 }

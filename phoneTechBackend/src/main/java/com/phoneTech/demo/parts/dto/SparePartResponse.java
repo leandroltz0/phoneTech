@@ -8,6 +8,7 @@ public record SparePartResponse(
         String name,
         String componentCode,
         String description,
+        String imageUri,
         boolean active,
         Instant createdAt,
         Instant updatedAt) {

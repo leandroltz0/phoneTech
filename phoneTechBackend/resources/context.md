@@ -280,6 +280,8 @@ Endpoints implementados:
 La etapa de costos históricos por proyecto (`project_spare_parts`) y el cálculo de rentabilidad todavía no están implementados.
 Regla general: verificar primero, implementar lo necesario, probarlo y reportar con honestidad qué funciona y qué queda pendiente. No presentar una suposición como resultado comprobado.
 
+Los repuestos pueden incluir `imageUri` y `description` en la respuesta del cálculo de reparación. `imageUri` es nullable y debe ser una ruta relativa del backend, por ejemplo `/uploads/spare-parts/modulo-a03.webp`. La columna `spare_parts.image_uri` queda pendiente de ejecución manual en PostgreSQL.
+
 ## 14. Cálculo del precio máximo de compra
 
 El endpoint `POST /api/v1/repair-price-calculations` recibe:

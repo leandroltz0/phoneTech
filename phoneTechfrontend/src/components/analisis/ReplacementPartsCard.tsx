@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '@/constants/colors';
-import { RepuestoMock } from '@/data/analisisMock';
+import { urlImagenDispositivo } from '@/services/devices';
+import type { RepairPartCostDto } from '@/types/api';
 
 type ReplacementPartsCardProps = {
-  repuestos: RepuestoMock[];
+  repuestos: RepairPartCostDto[];
   onSeeMore: () => void;
 };
 
@@ -26,26 +28,55 @@ export function ReplacementPartsCard({ repuestos, onSeeMore }: ReplacementPartsC
         </TouchableOpacity>
       </View>
 
-      {repuestos.map((repuesto, index) => (
-        <View key={repuesto.id} style={[styles.partRow, index > 0 && styles.partRowBorder]}>
-          <View style={styles.thumbnail}>
-            {repuesto.imagen ? (
-              <Image source={repuesto.imagen} style={styles.thumbnailImage} resizeMode="contain" />
-            ) : (
-              <Ionicons name="camera" color={Colors.analisis.title} size={37} />
-            )}
-          </View>
-          <View style={styles.partCopy}>
-            <Text style={styles.supplier}>{repuesto.proveedor}</Text>
-            <Text style={styles.partName}>{repuesto.nombre}</Text>
-            <Text style={styles.partDescription}>{repuesto.descripcion}</Text>
-          </View>
-          <View style={styles.priceBox}>
-            <Text style={styles.estimate}>Estimado</Text>
-            <Text style={styles.price}>{formatCurrency(repuesto.precio)}</Text>
-          </View>
-        </View>
-      ))}
+      {repuestos.length > 0 ? (
+        repuestos.map((repuesto, index) => (
+          <ReplacementPartItem
+            key={repuesto.sparePartId}
+            part={repuesto}
+            showDivider={index > 0}
+          />
+        ))
+      ) : (
+        <Text style={styles.emptyMessage}>No hay repuestos asociados a las fallas seleccionadas.</Text>
+      )}
+    </View>
+  );
+}
+
+type ReplacementPartItemProps = {
+  part: RepairPartCostDto;
+  showDivider: boolean;
+};
+
+export function ReplacementPartItem({ part, showDivider }: ReplacementPartItemProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageUri = urlImagenDispositivo(part.imageUri);
+
+  return (
+    <View style={[styles.partRow, showDivider && styles.partRowBorder]}>
+      <View style={styles.thumbnail}>
+        {imageUri && !imageFailed ? (
+          <Image
+            onError={() => setImageFailed(true)}
+            source={{ uri: imageUri }}
+            style={styles.thumbnailImage}
+            resizeMode="contain"
+          />
+        ) : (
+          <Ionicons name="image-outline" color={Colors.analisis.title} size={37} />
+        )}
+      </View>
+      <View style={styles.partCopy}>
+        <Text style={styles.supplier}>{part.supplierName}</Text>
+        <Text style={styles.partName}>{part.sparePartName}</Text>
+        <Text style={styles.partDescription}>
+          {part.sparePartDescription ?? 'Descripción no disponible.'}
+        </Text>
+      </View>
+      <View style={styles.priceBox}>
+        <Text style={styles.estimate}>{part.quantity > 1 ? `${part.quantity} unidades` : 'Estimado'}</Text>
+        <Text style={styles.price}>{formatCurrency(part.totalCost)}</Text>
+      </View>
     </View>
   );
 }
@@ -94,6 +125,7 @@ const styles = StyleSheet.create({
   partName: { color: Colors.analisis.title, fontSize: 15.5, fontWeight: '800' },
   supplier: { color: Colors.primary, fontSize: 10.5, fontWeight: '800', marginBottom: 1 },
   partDescription: { color: '#566B98', fontSize: 11.5, lineHeight: 14, marginTop: 3 },
+  emptyMessage: { color: '#60749D', fontSize: 12, lineHeight: 17, paddingVertical: 12 },
   priceBox: { alignItems: 'flex-end', minWidth: 69 },
   estimate: { color: '#0879D9', fontSize: 10.5, fontWeight: '800' },
   price: { color: Colors.analisis.title, fontSize: 17.5, fontWeight: '800', letterSpacing: -0.4, marginTop: 4 },

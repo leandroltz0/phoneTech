@@ -8,11 +8,56 @@ import { DeviceAnalysisHeader } from '@/components/analisis/DeviceAnalysisHeader
 import { EconomicAnalysisCard } from '@/components/analisis/EconomicAnalysisCard';
 import { ReplacementPartsCard } from '@/components/analisis/ReplacementPartsCard';
 import { Colors } from '@/constants/colors';
-import { repuestosMock, resumenAnalisisMock } from '@/data/analisisMock';
+import type { ItemResumenAnalisis } from '@/data/analisisMock';
 import { dispositivosMock } from '@/data/dispositivosMock';
 import type { RepairPriceCalculationResponseDto } from '@/types/api';
 
 const DEFAULT_VARIANT = 'SM-A035M · 4 GB RAM · 64 GB';
+
+const COMPONENTES_SALUDABLES = ['Pantalla', 'Cámaras', 'Batería', 'Conectividad'];
+
+const ETIQUETAS_COMPONENTES: Record<string, string> = {
+  'Módulo / pantalla': 'Pantalla',
+  Cámara: 'Cámaras',
+  Batería: 'Batería',
+  'SIM y conectividad': 'Conectividad',
+};
+
+function parseViabilityItems(value?: string | string[]): ItemResumenAnalisis[] {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  let selectedComponents: string[] = [];
+
+  if (rawValue) {
+    try {
+      const parsed: unknown = JSON.parse(rawValue);
+      if (Array.isArray(parsed)) {
+        selectedComponents = parsed
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => item.split(':')[0]?.trim())
+          .filter((item): item is string => Boolean(item));
+      }
+    } catch {
+      selectedComponents = [];
+    }
+  }
+
+  const brokenComponents = Array.from(new Set(
+    selectedComponents.map((component) => ETIQUETAS_COMPONENTES[component] ?? component),
+  ));
+  const visibleComponents = Array.from(new Set([
+    ...brokenComponents,
+    ...COMPONENTES_SALUDABLES,
+  ])).slice(0, 4);
+
+  return visibleComponents.map((component) => {
+    const needsRepair = brokenComponents.includes(component);
+    return {
+      titulo: component,
+      descripcion: needsRepair ? 'Requiere reparación' : 'Funciona correctamente',
+      estado: needsRepair ? 'alerta' : 'ok',
+    };
+  });
+}
 
 function parseEvaluacion(value?: string): RepairPriceCalculationResponseDto | null {
   if (!value) return null;
@@ -33,6 +78,7 @@ function parseEvaluacion(value?: string): RepairPriceCalculationResponseDto | nu
     if (requiredNumbers.some((item) => typeof item !== 'number')) return null;
     if (typeof evaluation.deviceId !== 'number' || typeof evaluation.variantId !== 'number') return null;
     if (typeof evaluation.purchaseAllowed !== 'boolean') return null;
+    if (!Array.isArray(evaluation.parts)) return null;
 
     return evaluation as RepairPriceCalculationResponseDto;
   } catch {
@@ -49,6 +95,7 @@ export default function AnalisisEquipoScreen() {
   }>();
   const dispositivo = dispositivosMock.find(({ id }) => id === dispositivoId) ?? dispositivosMock[0];
   const evaluacionBackend = parseEvaluacion(evaluacion);
+  const viabilityItems = parseViabilityItems(diagnostico);
 
   const showPendingDetails = (section: string) => {
     Alert.alert(section, 'El detalle completo estará disponible próximamente.');
@@ -76,11 +123,11 @@ export default function AnalisisEquipoScreen() {
           variante={variante ?? DEFAULT_VARIANT}
         />
         <AnalysisSummaryCard
-          items={resumenAnalisisMock}
+          items={viabilityItems}
           onSeeMore={() => showPendingDetails('Resumen del análisis')}
         />
         <ReplacementPartsCard
-          repuestos={repuestosMock}
+          repuestos={evaluacionBackend?.parts ?? []}
           onSeeMore={() => showPendingDetails('Repuestos necesarios')}
         />
         <EconomicAnalysisCard data={evaluacionBackend} />

@@ -1,14 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
-import { ItemResumenAnalisis } from '@/data/analisisMock';
+import type { ItemResumenAnalisis } from '@/data/analisisMock';
 
 type AnalysisSummaryCardProps = {
   items: ItemResumenAnalisis[];
   onSeeMore: () => void;
+  viabilityPercentage?: number;
 };
 
-export function AnalysisSummaryCard({ items, onSeeMore }: AnalysisSummaryCardProps) {
+const RING_SIZE = 130;
+const RING_STROKE_WIDTH = 11;
+const RING_RADIUS = (RING_SIZE - RING_STROKE_WIDTH) / 2;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+export function AnalysisSummaryCard({
+  items,
+  onSeeMore,
+  viabilityPercentage = 70,
+}: AnalysisSummaryCardProps) {
+  const boundedPercentage = Math.min(100, Math.max(0, viabilityPercentage));
+  const progressOffset = RING_CIRCUMFERENCE * (1 - boundedPercentage / 100);
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -16,7 +30,7 @@ export function AnalysisSummaryCard({ items, onSeeMore }: AnalysisSummaryCardPro
           <View style={styles.iconBox}>
             <Ionicons name="bar-chart" size={27} color="#0879D9" />
           </View>
-          <Text style={styles.title}>Resumen del análisis</Text>
+        <Text style={styles.title}>Índice de viabilidad</Text>
         </View>
         <TouchableOpacity accessibilityRole="button" onPress={onSeeMore} style={styles.seeMoreButton}>
           <Text style={styles.seeMoreText}>Ver más</Text>
@@ -26,10 +40,42 @@ export function AnalysisSummaryCard({ items, onSeeMore }: AnalysisSummaryCardPro
       <View style={styles.details}>
         <View style={styles.scoreArea}>
           <View style={styles.scoreRing}>
-            <View style={styles.scoreProgress} />
+            <Svg
+              accessible={false}
+              height={RING_SIZE}
+              pointerEvents="none"
+              style={styles.scoreSvg}
+              viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+              width={RING_SIZE}
+            >
+              <Circle
+                cx={RING_SIZE / 2}
+                cy={RING_SIZE / 2}
+                fill="none"
+                r={RING_RADIUS}
+                stroke={Colors.analisis.ringTrack}
+                strokeWidth={RING_STROKE_WIDTH}
+              />
+              {boundedPercentage > 0 && (
+                <Circle
+                  cx={RING_SIZE / 2}
+                  cy={RING_SIZE / 2}
+                  fill="none"
+                  r={RING_RADIUS}
+                  rotation={-90}
+                  originX={RING_SIZE / 2}
+                  originY={RING_SIZE / 2}
+                  stroke={Colors.primary}
+                  strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
+                  strokeDashoffset={progressOffset}
+                  strokeLinecap="round"
+                  strokeWidth={RING_STROKE_WIDTH}
+                />
+              )}
+            </Svg>
             <View style={styles.scoreCenter}>
-              <Text style={styles.score}>70%</Text>
-              <Text style={styles.scoreCaption}>Funcionalidad</Text>
+              <Text style={styles.score}>{Math.round(boundedPercentage)}%</Text>
+            <Text style={styles.scoreCaption}>Viabilidad</Text>
             </View>
           </View>
         </View>
@@ -42,8 +88,8 @@ export function AnalysisSummaryCard({ items, onSeeMore }: AnalysisSummaryCardPro
             return (
               <View key={item.titulo} style={styles.statusRow}>
                 <Ionicons
-                  name={isWarning ? 'alert-circle' : 'checkmark-circle'}
-                  color={isWarning ? Colors.analisis.warning : Colors.analisis.success}
+                  name={isWarning ? 'close-circle' : 'checkmark-circle'}
+                  color={isWarning ? '#D92D20' : Colors.analisis.success}
                   size={20}
                 />
                 <View style={styles.statusCopy}>
@@ -88,28 +134,15 @@ const styles = StyleSheet.create({
   scoreArea: { alignItems: 'center', justifyContent: 'center', paddingRight: 13, width: '42%' },
   scoreRing: {
     alignItems: 'center',
-    borderColor: Colors.analisis.ringTrack,
-    borderRadius: 65,
-    borderWidth: 11,
-    height: 130,
+    height: RING_SIZE,
     justifyContent: 'center',
-    overflow: 'hidden',
     position: 'relative',
-    width: 130,
+    width: RING_SIZE,
   },
-  scoreProgress: {
-    borderBottomColor: Colors.primary,
-    borderLeftColor: Colors.primary,
-    borderRadius: 65,
-    borderRightColor: Colors.primary,
-    borderTopColor: 'transparent',
-    borderWidth: 11,
-    height: 130,
-    left: -11,
+  scoreSvg: {
     position: 'absolute',
-    top: -11,
-    transform: [{ rotate: '-34deg' }],
-    width: 130,
+    left: 0,
+    top: 0,
   },
   scoreCenter: { alignItems: 'center' },
   score: { color: Colors.analisis.title, fontSize: 29, fontWeight: '800', letterSpacing: -1.2 },

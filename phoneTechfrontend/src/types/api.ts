@@ -155,15 +155,44 @@ export interface RepairPriceCalculationRequestDto {
 }
 
 export interface RepairPriceCalculationResponseDto {
+  brand?: string;
+  commercialName?: string;
   deviceId: number;
   variantId: number;
+  modelCode?: string;
+  saleCondition?: SaleConditionDto;
   resalePrice: number;
+  currency?: string | null;
   repairPartsCost: number;
   minimumProfit: number;
   maximumPurchasePrice: number;
   projectedProfit: number;
+  calculationAvailable?: boolean;
   purchaseAllowed: boolean;
-  currency?: string;
+  parts: RepairPartCostDto[];
+  missingCosts?: MissingRepairCostDto[];
+}
+
+export interface RepairPartCostDto {
+  sparePartId: number;
+  sparePartName: string;
+  sparePartDescription?: string | null;
+  imageUri?: string | null;
+  faultIds: number[];
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+  currency: string;
+  supplierOfferId: number;
+  supplierId: number;
+  supplierName: string;
+}
+
+export interface MissingRepairCostDto {
+  faultId: number | null;
+  sparePartId: number | null;
+  sparePartName: string | null;
+  reason: string;
 }
 
 export interface DeviceSelectionDataDto {

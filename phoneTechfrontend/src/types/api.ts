@@ -173,6 +173,15 @@ export interface RepairPriceCalculationResponseDto {
   missingCosts?: MissingRepairCostDto[];
 }
 
+export interface SelectedDiagnosisFaultDto {
+  faultId: number;
+  faultCode: string;
+  faultName: string;
+  description: string;
+  componentCode: string;
+  componentName: string;
+}
+
 export interface RepairPartCostDto {
   sparePartId: number;
   sparePartName: string;

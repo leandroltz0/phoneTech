@@ -88,12 +88,14 @@ function adaptarVariante(variant: DeviceSelectionDataDto['variants'][number]): V
 
 function adaptarFallaDiagnostico(fault: {
   id: number;
+  code: string;
   name: string;
   description: string;
 }): ComponentIssue {
   return {
     id: String(fault.id),
     faultId: fault.id,
+    code: fault.code,
     title: fault.name,
     description: fault.description,
   };
@@ -294,6 +296,21 @@ export default function SeleccionarTelefonoScreen() {
           varianteId: infoVariante.id,
           variante: `${infoVariante.codigo} · ${infoVariante.ram} / ${infoVariante.almacenamiento}`,
           diagnostico: JSON.stringify(fallasDetalladas.map(({ category, issue }) => `${category.label}: ${issue.title}`)),
+          diagnosticoDetalles: JSON.stringify(fallasDetalladas.flatMap(({ category, issue }) => (
+            issue.faultId === undefined || !issue.code
+              ? []
+              : [{
+                  faultId: issue.faultId,
+                  faultCode: issue.code,
+                  faultName: issue.title,
+                  description: issue.description,
+                  componentCode: CODIGOS_CATEGORIA_BACKEND[category.id],
+                  componentName: categoriasBackend.find(
+                    (backendCategory) => backendCategory.code === CODIGOS_CATEGORIA_BACKEND[category.id],
+                  )?.name ?? category.label,
+                }]
+          ))),
+          imagenProyecto: infoVariante.imagenUri ?? imagenDispositivoUri ?? '',
           evaluacion: JSON.stringify(evaluacion),
         },
       });

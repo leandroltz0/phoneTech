@@ -9,7 +9,7 @@ import { EconomicAnalysisCard } from '@/components/analisis/EconomicAnalysisCard
 import { ReplacementPartsCard } from '@/components/analisis/ReplacementPartsCard';
 import { Colors } from '@/constants/colors';
 import type { ItemResumenAnalisis } from '@/data/analisisMock';
-import { dispositivosMock } from '@/data/dispositivosMock';
+import { urlImagenDispositivo } from '@/services/devices';
 import type { RepairPriceCalculationResponseDto } from '@/types/api';
 
 const DEFAULT_VARIANT = 'SM-A035M · 4 GB RAM · 64 GB';
@@ -87,15 +87,20 @@ function parseEvaluacion(value?: string): RepairPriceCalculationResponseDto | nu
 }
 
 export default function AnalisisEquipoScreen() {
-  const { dispositivoId, variante, diagnostico, evaluacion } = useLocalSearchParams<{
+  const { dispositivoId, variante, diagnostico, diagnosticoDetalles, imagenProyecto, evaluacion } = useLocalSearchParams<{
     dispositivoId?: string;
     variante?: string;
     diagnostico?: string;
+    diagnosticoDetalles?: string;
+    imagenProyecto?: string;
     evaluacion?: string;
   }>();
-  const dispositivo = dispositivosMock.find(({ id }) => id === dispositivoId) ?? dispositivosMock[0];
   const evaluacionBackend = parseEvaluacion(evaluacion);
   const viabilityItems = parseViabilityItems(diagnostico);
+  const imageUri = urlImagenDispositivo(imagenProyecto);
+  const brandName = evaluacionBackend?.brand ?? '';
+  const commercialName = evaluacionBackend?.commercialName ?? '';
+  const variantName = variante ?? evaluacionBackend?.modelCode ?? DEFAULT_VARIANT;
 
   const showPendingDetails = (section: string) => {
     Alert.alert(section, 'El detalle completo estará disponible próximamente.');
@@ -118,9 +123,10 @@ export default function AnalisisEquipoScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <DeviceAnalysisHeader
-          marca={dispositivo.marca}
-          modelo={dispositivo.modelo}
-          variante={variante ?? DEFAULT_VARIANT}
+          marca={brandName}
+          modelo={commercialName}
+          variante={variantName}
+          imageUri={imageUri}
         />
         <AnalysisSummaryCard
           items={viabilityItems}
@@ -140,7 +146,14 @@ export default function AnalisisEquipoScreen() {
           activeOpacity={0.85}
           onPress={() => router.push({
             pathname: '/guardar-proyecto',
-            params: { dispositivoId: dispositivo.id, variante, diagnostico },
+            params: {
+              dispositivoId: String(evaluacionBackend?.deviceId ?? dispositivoId ?? ''),
+              variante: variantName,
+              diagnostico,
+              diagnosticoDetalles,
+              imagenProyecto: imageUri ?? '',
+              evaluacion: evaluacion ? (Array.isArray(evaluacion) ? evaluacion[0] : evaluacion) : undefined,
+            },
           })}
           style={styles.saveButton}
         >

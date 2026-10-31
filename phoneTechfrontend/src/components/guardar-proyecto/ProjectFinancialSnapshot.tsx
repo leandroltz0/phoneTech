@@ -3,12 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/colors';
 
 type ProjectFinancialSnapshotProps = {
-  ganancia: number;
-  gasto: number;
+  ganancia: number | null;
+  gasto: number | null;
   fechaInicio: string;
 };
 
-const formatCurrency = (value: number) => `$${value.toLocaleString('es-AR')}`;
+const formatCurrency = (value: number | null) =>
+  value === null ? 'No disponible' : `$${value.toLocaleString('es-AR')}`;
 
 export function ProjectFinancialSnapshot({
   ganancia,

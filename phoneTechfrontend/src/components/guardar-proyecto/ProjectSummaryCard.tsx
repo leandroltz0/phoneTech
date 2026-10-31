@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/colors';
 
@@ -8,6 +9,7 @@ type ProjectSummaryCardProps = {
   numero: number;
   variante: string;
   diagnostico: string[];
+  imageUri?: string | null;
 };
 
 export function ProjectSummaryCard({
@@ -16,17 +18,25 @@ export function ProjectSummaryCard({
   numero,
   variante,
   diagnostico,
+  imageUri,
 }: ProjectSummaryCardProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   return (
     <View style={styles.card}>
       <View style={styles.topRow}>
         <View style={styles.imageArea}>
           <View style={styles.imageHalo} />
-          <Image
-            source={require('@/assets/images/phone-preview-a03.png')}
-            resizeMode="contain"
-            style={styles.phoneImage}
-          />
+          {imageUri && !imageFailed ? (
+            <Image
+              onError={() => setImageFailed(true)}
+              source={{ uri: imageUri }}
+              resizeMode="contain"
+              style={styles.phoneImage}
+            />
+          ) : (
+            <Ionicons name="phone-portrait-outline" size={48} color="#94A3B8" />
+          )}
         </View>
         <View style={styles.projectCopy}>
           <Text style={styles.projectNumber}>PROYECTO #{String(numero).padStart(3, '0')}</Text>
@@ -42,8 +52,8 @@ export function ProjectSummaryCard({
       <View style={styles.divider} />
       <Text style={styles.diagnosisLabel}>DIAGNÓSTICO REGISTRADO</Text>
       <View style={styles.chips}>
-        {diagnostico.map((falla, index) => (
-          <View key={falla} style={styles.chip}>
+        {diagnostico.length ? diagnostico.map((falla, index) => (
+          <View key={`${index}-${falla}`} style={styles.chip}>
             <Ionicons
               name={index === 0 ? 'construct' : 'phone-portrait'}
               size={23}
@@ -51,7 +61,9 @@ export function ProjectSummaryCard({
             />
             <Text style={styles.chipText}>{falla}</Text>
           </View>
-        ))}
+        )) : (
+          <Text style={styles.emptyDiagnosis}>No hay fallas registradas.</Text>
+        )}
       </View>
     </View>
   );
@@ -81,7 +93,8 @@ const styles = StyleSheet.create({
   pendingText: { color: '#C97900', fontSize: 12.5, fontWeight: '700' },
   divider: { backgroundColor: '#D9E5F5', height: 1, marginTop: 8 },
   diagnosisLabel: { color: '#71809E', fontSize: 10.5, fontWeight: '800', letterSpacing: 0.7, marginTop: 12 },
-  chips: { flexDirection: 'row', gap: 8, marginTop: 7 },
-  chip: { alignItems: 'center', backgroundColor: '#DFF1FC', borderRadius: 99, flex: 1, flexDirection: 'row', gap: 7, justifyContent: 'center', minHeight: 43, paddingHorizontal: 8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 7 },
+  chip: { alignItems: 'center', backgroundColor: '#DFF1FC', borderRadius: 99, flexBasis: '48%', flexDirection: 'row', flexGrow: 1, gap: 7, justifyContent: 'center', minHeight: 43, paddingHorizontal: 8 },
   chipText: { color: '#173D73', fontSize: 12.5, fontWeight: '700' },
+  emptyDiagnosis: { color: '#506795', fontSize: 13, paddingVertical: 10 },
 });

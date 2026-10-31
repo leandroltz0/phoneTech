@@ -7,18 +7,85 @@ import { ProjectFinancialSnapshot } from '@/components/guardar-proyecto/ProjectF
 import { ProjectStatusCard } from '@/components/guardar-proyecto/ProjectStatusCard';
 import { ProjectSummaryCard } from '@/components/guardar-proyecto/ProjectSummaryCard';
 import { Colors } from '@/constants/colors';
-import { EstadoGuardadoProyecto, proyectoPendienteMock } from '@/data/guardarProyectoMock';
-import { dispositivosMock } from '@/data/dispositivosMock';
+import { EstadoGuardadoProyecto } from '@/data/guardarProyectoMock';
 import { guardarProyectoMock, obtenerProximoNumeroProyectoMock } from '@/data/proyectosMock';
-import { EstadoProyecto } from '@/types/proyecto';
+import type { EstadoProyecto, FallaDiagnostico } from '@/types/proyecto';
+import type { RepairPriceCalculationResponseDto, SelectedDiagnosisFaultDto } from '@/types/api';
+import { urlImagenDispositivo } from '@/services/devices';
+
+function firstParam(value?: string | string[]): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseEvaluacion(value?: string): RepairPriceCalculationResponseDto | null {
+  if (!value) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const evaluation = parsed as Partial<RepairPriceCalculationResponseDto>;
+    if (typeof evaluation.deviceId !== 'number' || typeof evaluation.variantId !== 'number') return null;
+    if (typeof evaluation.projectedProfit !== 'number' || typeof evaluation.repairPartsCost !== 'number') return null;
+    if (typeof evaluation.resalePrice !== 'number' || !Array.isArray(evaluation.parts)) return null;
+    return evaluation as RepairPriceCalculationResponseDto;
+  } catch {
+    return null;
+  }
+}
+
+function parseDiagnosticoDetalles(value?: string): SelectedDiagnosisFaultDto[] {
+  if (!value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is SelectedDiagnosisFaultDto => (
+      Boolean(item)
+      && typeof item === 'object'
+      && typeof item.faultId === 'number'
+      && typeof item.faultCode === 'string'
+      && typeof item.faultName === 'string'
+      && typeof item.description === 'string'
+      && typeof item.componentCode === 'string'
+      && typeof item.componentName === 'string'
+    ));
+  } catch {
+    return [];
+  }
+}
+
+function parseDiagnosticoTexto(value?: string): string[] {
+  if (!value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function GuardarProyectoScreen() {
-  const { dispositivoId, variante, diagnostico } = useLocalSearchParams<{
-    dispositivoId?: string;
-    variante?: string;
-    diagnostico?: string;
+  const params = useLocalSearchParams<{
+    dispositivoId?: string | string[];
+    variante?: string | string[];
+    diagnostico?: string | string[];
+    diagnosticoDetalles?: string | string[];
+    imagenProyecto?: string | string[];
+    evaluacion?: string | string[];
   }>();
-  const dispositivo = dispositivosMock.find(({ id }) => id === dispositivoId) ?? dispositivosMock[0];
+  const dispositivoId = firstParam(params.dispositivoId);
+  const variante = firstParam(params.variante);
+  const diagnostico = firstParam(params.diagnostico);
+  const diagnosticoDetallesRaw = firstParam(params.diagnosticoDetalles);
+  const imagenProyectoRaw = firstParam(params.imagenProyecto);
+  const evaluacion = firstParam(params.evaluacion);
+  const evaluacionBackend = parseEvaluacion(evaluacion);
+  const diagnosticoBackend = parseDiagnosticoDetalles(diagnosticoDetallesRaw);
+  const diagnosticoSeleccionado = diagnosticoBackend.length > 0
+    ? diagnosticoBackend.map((fault) => `${fault.componentName}: ${fault.faultName}`)
+    : parseDiagnosticoTexto(diagnostico);
+  const imagenProyecto = urlImagenDispositivo(imagenProyectoRaw);
+  const marca = evaluacionBackend?.brand ?? '';
+  const modelo = evaluacionBackend?.commercialName ?? '';
+  const varianteBackend = variante ?? evaluacionBackend?.modelCode ?? '';
   const [estado, setEstado] = useState<EstadoGuardadoProyecto>('pendiente');
   const [statusExpanded, setStatusExpanded] = useState(false);
 
@@ -27,29 +94,29 @@ export default function GuardarProyectoScreen() {
     setStatusExpanded(false);
   };
 
-  const diagnosticoSeleccionado = (() => {
-    try {
-      const parsed: unknown = diagnostico ? JSON.parse(diagnostico) : null;
-      return Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')
-        ? parsed
-        : proyectoPendienteMock.diagnostico;
-    } catch {
-      return proyectoPendienteMock.diagnostico;
-    }
-  })();
-
   const saveProject = () => {
     const estadoProyecto: EstadoProyecto = estado === 'pendiente' ? 'evaluacion' : estado;
+    const fallas: FallaDiagnostico[] = diagnosticoBackend.map((fault) => ({
+      id: String(fault.faultId),
+      componente: fault.componentName,
+      descripcion: `${fault.faultName} · ${fault.description}`,
+      confirmada: true,
+    }));
+
     guardarProyectoMock({
-      modelo: `${dispositivo.marca} ${dispositivo.modelo}`,
-      marca: dispositivo.marca,
-      imagen: getDeviceImage(dispositivo.id),
+      modelo: `${marca} ${modelo}`.trim(),
+      marca,
+      variante: varianteBackend,
+      imagen: imagenProyecto ?? '',
       diagnostico: diagnosticoSeleccionado,
+      fallas,
       estado: estadoProyecto,
       gananciaTipo: 'estimada',
-      ganancia: proyectoPendienteMock.gananciaEstimada,
+      ganancia: evaluacionBackend?.projectedProfit ?? 0,
+      precioCompra: evaluacionBackend?.maximumPurchasePrice ?? undefined,
+      precioVentaEstimado: evaluacionBackend?.resalePrice ?? undefined,
+      totalGastos: evaluacionBackend?.repairPartsCost ?? 0,
       fechaCreacion: new Date().toISOString(),
-      unlockToolSupported: dispositivo.unlockToolSupported,
     });
     router.replace('/(tabs)/proyectos');
   };
@@ -70,15 +137,16 @@ export default function GuardarProyectoScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <ProjectSummaryCard
           diagnostico={diagnosticoSeleccionado}
-          marca={dispositivo.marca}
-          modelo={dispositivo.modelo}
+          marca={marca}
+          modelo={modelo}
           numero={obtenerProximoNumeroProyectoMock()}
-          variante={variante ?? proyectoPendienteMock.variante}
+          variante={varianteBackend}
+          imageUri={imagenProyecto}
         />
         <ProjectFinancialSnapshot
-          fechaInicio={proyectoPendienteMock.fechaInicio}
-          ganancia={proyectoPendienteMock.gananciaEstimada}
-          gasto={proyectoPendienteMock.gastoEstimado}
+          fechaInicio={new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+          ganancia={evaluacionBackend?.projectedProfit ?? null}
+          gasto={evaluacionBackend?.repairPartsCost ?? null}
         />
         <ProjectStatusCard
           estado={estado}
@@ -89,7 +157,17 @@ export default function GuardarProyectoScreen() {
         <TouchableOpacity
           accessibilityRole="button"
           activeOpacity={0.78}
-          onPress={() => router.push({ pathname: '/analisis-equipo', params: { dispositivoId: dispositivo.id, variante, diagnostico } })}
+          onPress={() => router.push({
+            pathname: '/analisis-equipo',
+            params: {
+              dispositivoId,
+              variante: varianteBackend,
+              diagnostico,
+              diagnosticoDetalles: diagnosticoDetallesRaw,
+              imagenProyecto: imagenProyectoRaw,
+              evaluacion,
+            },
+          })}
           style={styles.detailsLink}
         >
           <View style={styles.detailsIcon}>
@@ -117,21 +195,6 @@ export default function GuardarProyectoScreen() {
       </View>
     </SafeAreaView>
   );
-}
-
-function getDeviceImage(dispositivoId: string) {
-  const images: Record<string, string> = {
-    'samsung-a03': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a03-1.jpg',
-    'samsung-a10': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a10-1.jpg',
-    'samsung-a14': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a14-5g-1.jpg',
-    'moto-e13': 'https://fdn2.gsmarena.com/vv/pics/motorola/motorola-moto-e13-1.jpg',
-    'samsung-a04': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a04-1.jpg',
-    'moto-g22': 'https://fdn2.gsmarena.com/vv/pics/motorola/motorola-moto-g22-1.jpg',
-    'samsung-a12': 'https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a12-1.jpg',
-    'moto-g32': 'https://fdn2.gsmarena.com/vv/pics/motorola/moto-g32-1.jpg',
-  };
-
-  return images[dispositivoId] ?? images['samsung-a03'];
 }
 
 const styles = StyleSheet.create({

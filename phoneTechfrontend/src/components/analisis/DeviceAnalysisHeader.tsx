@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/colors';
 
@@ -5,20 +7,31 @@ type DeviceAnalysisHeaderProps = {
   marca: string;
   modelo: string;
   variante: string;
+  imageUri?: string | null;
 };
 
 export function DeviceAnalysisHeader({
   marca,
   modelo,
   variante,
+  imageUri,
 }: DeviceAnalysisHeaderProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   return (
     <View style={styles.card}>
-      <Image
-        source={require('@/assets/images/phone-preview-a03.png')}
-        style={styles.phoneImage}
-        resizeMode="contain"
-      />
+      {imageUri && !imageFailed ? (
+        <Image
+          onError={() => setImageFailed(true)}
+          source={{ uri: imageUri }}
+          style={styles.phoneImage}
+          resizeMode="contain"
+        />
+      ) : (
+        <View style={styles.imagePlaceholder}>
+          <Ionicons name="phone-portrait-outline" size={42} color="#94A3B8" />
+        </View>
+      )}
       <View style={styles.content}>
         <Text style={styles.deviceName}>{marca} {modelo}</Text>
         <Text style={styles.deviceSpecs}>{variante}</Text>
@@ -49,6 +62,15 @@ const styles = StyleSheet.create({
   },
   phoneImage: {
     height: 108,
+    marginRight: 13,
+    width: 122,
+  },
+  imagePlaceholder: {
+    alignItems: 'center',
+    backgroundColor: Colors.analisis.softBlue,
+    borderRadius: 18,
+    height: 108,
+    justifyContent: 'center',
     marginRight: 13,
     width: 122,
   },

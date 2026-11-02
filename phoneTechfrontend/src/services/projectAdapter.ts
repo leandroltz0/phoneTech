@@ -45,11 +45,26 @@ export function adaptarProyectoDetalle(detalle: ProjectDetailsDto): Proyecto {
     fallas,
     fechaCreacion: detalle.createdAt,
     gananciaTipo: detalle.status === 'SOLD' ? 'real' : 'estimada',
+    variante: formatearVariante(detalle),
     precioVentaEstimado: detalle.salePrice ?? undefined,
     totalGastos: detalle.repairCost,
     unlockToolStatus: detalle.unlockToolStatus,
     unlockToolSupported: detalle.unlockToolStatus === 'SUPPORTED',
   };
+}
+
+function formatearVariante(detalle: ProjectDetailsDto): string | undefined {
+  const codigo = detalle.modelCode || detalle.variantName;
+  const especificaciones = [
+    typeof detalle.ramGb === 'number' ? `${detalle.ramGb} GB RAM` : null,
+    typeof detalle.storageGb === 'number' ? `${detalle.storageGb} GB almacenamiento` : null,
+  ].filter((valor): valor is string => valor !== null);
+
+  if (!codigo && especificaciones.length === 0) return undefined;
+  if (!codigo) return especificaciones.join(' / ');
+  if (especificaciones.length === 0) return codigo;
+
+  return `${codigo} · ${especificaciones.join(' / ')}`;
 }
 
 function crearBase(

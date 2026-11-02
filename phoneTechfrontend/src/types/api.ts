@@ -53,6 +53,12 @@ export interface ProjectDetailsDto {
   status: ProjectStatusDto;
   createdAt: string;
   unlockToolStatus: UnlockToolSupportStatusDto;
+  modelCode: string;
+  variantName: string | null;
+  ramGb: number | null;
+  storageGb: number | null;
+  chipset: string | null;
+  region: string | null;
   imageUrl: string | null;
   salePrice: number | null;
   saleCurrency: string | null;

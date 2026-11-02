@@ -126,6 +126,12 @@ class ProjectServiceTest {
         when(row.getStatus()).thenReturn(ProjectStatus.PENDING.name());
         when(row.getCreatedAt()).thenReturn(CREATION_DATE);
         when(row.getUnlockToolStatus()).thenReturn("SUPPORTED");
+        when(row.getModelCode()).thenReturn("A03-128GB");
+        when(row.getVariantName()).thenReturn("Samsung Galaxy A03 4GB/128GB");
+        when(row.getRamGb()).thenReturn((short) 4);
+        when(row.getStorageGb()).thenReturn((short) 128);
+        when(row.getChipset()).thenReturn("Unisoc T606");
+        when(row.getRegion()).thenReturn("LATAM");
         when(row.getImageUrl()).thenReturn("/uploads/project-photo.jpg");
         when(row.getSalePrice()).thenReturn(new BigDecimal("150000.00"));
         when(row.getSaleCurrency()).thenReturn("ARS");
@@ -145,6 +151,12 @@ class ProjectServiceTest {
         assertThat(response.status()).isEqualTo(ProjectStatus.PENDING);
         assertThat(response.createdAt()).isEqualTo(CREATION_DATE);
         assertThat(response.unlockToolStatus()).isEqualTo(UnlockToolSupportStatus.SUPPORTED);
+        assertThat(response.modelCode()).isEqualTo("A03-128GB");
+        assertThat(response.variantName()).isEqualTo("Samsung Galaxy A03 4GB/128GB");
+        assertThat(response.ramGb()).isEqualTo((short) 4);
+        assertThat(response.storageGb()).isEqualTo((short) 128);
+        assertThat(response.chipset()).isEqualTo("Unisoc T606");
+        assertThat(response.region()).isEqualTo("LATAM");
         assertThat(response.imageUrl()).isEqualTo("/uploads/project-photo.jpg");
         assertThat(response.salePrice()).isEqualByComparingTo("150000.00");
         assertThat(response.saleCurrency()).isEqualTo("ARS");

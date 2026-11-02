@@ -81,6 +81,12 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
                 p.created_at AS "createdAt",
                 p.estimated_profit AS "estimatedProfit",
                 p.phone_variant_id AS "phoneVariantId",
+                v.model_code AS "modelCode",
+                v.variant_name AS "variantName",
+                v.ram_gb AS "ramGb",
+                v.storage_gb AS "storageGb",
+                v.chipset AS "chipset",
+                v.region AS "region",
                 COALESCE(m.unlocktool_status, 'UNKNOWN') AS "unlockToolStatus",
                 COALESCE(
                     (
@@ -209,6 +215,18 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
         BigDecimal getEstimatedProfit();
 
         Long getPhoneVariantId();
+
+        String getModelCode();
+
+        String getVariantName();
+
+        Short getRamGb();
+
+        Short getStorageGb();
+
+        String getChipset();
+
+        String getRegion();
 
         String getUnlockToolStatus();
 

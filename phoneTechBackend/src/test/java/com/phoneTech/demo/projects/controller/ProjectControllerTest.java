@@ -133,6 +133,12 @@ class ProjectControllerTest {
                 ProjectStatus.PENDING,
                 Instant.parse("2026-10-18T10:00:00Z"),
                 UnlockToolSupportStatus.SUPPORTED,
+                "A03-128GB",
+                "Samsung Galaxy A03 4GB/128GB",
+                (short) 4,
+                (short) 128,
+                "Unisoc T606",
+                "LATAM",
                 "/uploads/project-photo.jpg",
                 new BigDecimal("150000.00"),
                 "ARS",
@@ -153,6 +159,12 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.status").value("PENDING"))
                 .andExpect(jsonPath("$.createdAt").value("2026-10-18T10:00:00Z"))
                 .andExpect(jsonPath("$.unlockToolStatus").value("SUPPORTED"))
+                .andExpect(jsonPath("$.modelCode").value("A03-128GB"))
+                .andExpect(jsonPath("$.variantName").value("Samsung Galaxy A03 4GB/128GB"))
+                .andExpect(jsonPath("$.ramGb").value(4))
+                .andExpect(jsonPath("$.storageGb").value(128))
+                .andExpect(jsonPath("$.chipset").value("Unisoc T606"))
+                .andExpect(jsonPath("$.region").value("LATAM"))
                 .andExpect(jsonPath("$.imageUrl").value("/uploads/project-photo.jpg"))
                 .andExpect(jsonPath("$.salePrice").value(150000.00))
                 .andExpect(jsonPath("$.saleCurrency").value("ARS"))

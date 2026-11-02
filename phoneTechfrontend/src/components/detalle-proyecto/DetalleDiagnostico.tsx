@@ -42,22 +42,6 @@ export const DetalleDiagnostico = ({ proyecto, onEditar }: Props) => {
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Diagnóstico</Text>
-        {onEditar && (
-          <TouchableOpacity
-            style={styles.editarBtn}
-            onPress={onEditar}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name="pencil"
-              size={12}
-              color={Colors.primary}
-              style={styles.editarIcon}
-            />
-            <Text style={styles.editarText}>Editar</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Lista de fallas resumidas */}
@@ -221,24 +205,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#10264C',
-  },
-  editarBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#D4E9F5',
-  },
-  editarIcon: {
-    marginRight: 4,
-  },
-  editarText: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    color: Colors.primary,
   },
   fallasLista: {
     gap: 8,

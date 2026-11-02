@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { mensajeDeError } from '@/services/api';
 import { adaptarProyectoDetalle } from '@/services/projectAdapter';
-import { obtenerProyectoCompleto } from '@/services/projects';
+import { obtenerProyectoDetallado } from '@/services/projects';
 import { EstadoProyecto, Proyecto } from '@/types/proyecto';
+import type { ProjectDetailsDto } from '@/types/api';
 
 export interface UseProyectoDetalle {
   proyecto: Proyecto | null;
@@ -13,9 +14,7 @@ export interface UseProyectoDetalle {
   cambiarEstadoLocal: (estado: EstadoProyecto) => void;
 }
 
-type ProyectoCompleto = Awaited<ReturnType<typeof obtenerProyectoCompleto>>;
-
-/** Detalle de un proyecto (GET /{id} + GET /{id}/images en paralelo). */
+/** Detalle de un proyecto (GET /{id}/details). */
 export function useProyectoDetalle(id?: string): UseProyectoDetalle {
   const idNumerico = Number(id);
   const idValido = Boolean(id) && !Number.isNaN(idNumerico);
@@ -25,8 +24,8 @@ export function useProyectoDetalle(id?: string): UseProyectoDetalle {
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(idValido ? null : 'Proyecto no encontrado');
 
-  const aplicarExito = useCallback(({ detalle, imagenes }: ProyectoCompleto) => {
-    setProyecto(adaptarProyectoDetalle(detalle, imagenes));
+  const aplicarExito = useCallback((detalle: ProjectDetailsDto) => {
+    setProyecto(adaptarProyectoDetalle(detalle));
     setError(null);
     setCargando(false);
     setRefrescando(false);
@@ -42,9 +41,9 @@ export function useProyectoDetalle(id?: string): UseProyectoDetalle {
   useEffect(() => {
     if (!idValido) return;
     let activo = true;
-    void obtenerProyectoCompleto(idNumerico).then(
-      (completo) => {
-        if (activo) aplicarExito(completo);
+    void obtenerProyectoDetallado(idNumerico).then(
+      (detalle) => {
+        if (activo) aplicarExito(detalle);
       },
       (e) => {
         if (activo) aplicarFallo(e);
@@ -58,7 +57,7 @@ export function useProyectoDetalle(id?: string): UseProyectoDetalle {
   const refrescar = useCallback(async () => {
     if (!idValido) return;
     setRefrescando(true);
-    await obtenerProyectoCompleto(idNumerico).then(aplicarExito, aplicarFallo);
+    await obtenerProyectoDetallado(idNumerico).then(aplicarExito, aplicarFallo);
   }, [idNumerico, idValido, aplicarExito, aplicarFallo]);
 
   const cambiarEstadoLocal = useCallback((estado: EstadoProyecto) => {

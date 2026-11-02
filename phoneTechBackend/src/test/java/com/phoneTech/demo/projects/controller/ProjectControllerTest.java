@@ -1,6 +1,8 @@
 package com.phoneTech.demo.projects.controller;
 
+import com.phoneTech.demo.devices.enums.UnlockToolSupportStatus;
 import com.phoneTech.demo.projects.dto.ProjectDetailResponse;
+import com.phoneTech.demo.projects.dto.ProjectDetailsResponse;
 import com.phoneTech.demo.projects.dto.ProjectFaultResponse;
 import com.phoneTech.demo.projects.dto.ProjectSummaryResponse;
 import com.phoneTech.demo.projects.enums.ProjectStatus;
@@ -120,6 +122,56 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.diagnosis[1].imageUri").value(nullValue()))
                 .andExpect(jsonPath("$.diagnosis[1].notes").value(nullValue()))
                 .andExpect(jsonPath("$.diagnosis[1].confirmed").value(false));
+    }
+
+    @Test
+    void returnsProjectDetailsWithDevicePriceAndRepairCost() throws Exception {
+        when(projectService.getProjectDetails(3L)).thenReturn(new ProjectDetailsResponse(
+                3L,
+                3L,
+                "Samsung Galaxy A03",
+                ProjectStatus.PENDING,
+                Instant.parse("2026-10-18T10:00:00Z"),
+                UnlockToolSupportStatus.SUPPORTED,
+                "/uploads/project-photo.jpg",
+                new BigDecimal("150000.00"),
+                "ARS",
+                new BigDecimal("25000.00"),
+                new BigDecimal("12000.00"),
+                "ARS",
+                List.of(new ProjectFaultResponse(
+                        "MODULE", "Módulo", "MODULE_BROKEN", "Módulo roto",
+                        "La pantalla del celular está rota o dañada.", null, true, null
+                ))
+        ));
+
+        mockMvc.perform(get("/api/v1/projects/3/details"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(3))
+                .andExpect(jsonPath("$.projectNumber").value(3))
+                .andExpect(jsonPath("$.phoneModel").value("Samsung Galaxy A03"))
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.createdAt").value("2026-10-18T10:00:00Z"))
+                .andExpect(jsonPath("$.unlockToolStatus").value("SUPPORTED"))
+                .andExpect(jsonPath("$.imageUrl").value("/uploads/project-photo.jpg"))
+                .andExpect(jsonPath("$.salePrice").value(150000.00))
+                .andExpect(jsonPath("$.saleCurrency").value("ARS"))
+                .andExpect(jsonPath("$.estimatedProfit").value(25000.00))
+                .andExpect(jsonPath("$.repairCost").value(12000.00))
+                .andExpect(jsonPath("$.repairCurrency").value("ARS"))
+                .andExpect(jsonPath("$.diagnosis.length()").value(1))
+                .andExpect(jsonPath("$.diagnosis[0].componentName").value("Módulo"))
+                .andExpect(jsonPath("$.diagnosis[0].faultName").value("Módulo roto"));
+    }
+
+    @Test
+    void returnsNotFoundWhenProjectDetailsDoNotExist() throws Exception {
+        when(projectService.getProjectDetails(999L)).thenThrow(new ProjectNotFoundException(999L));
+
+        mockMvc.perform(get("/api/v1/projects/999/details"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("Project not found: 999"));
     }
 
     @Test

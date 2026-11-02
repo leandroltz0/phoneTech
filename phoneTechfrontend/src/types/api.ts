@@ -45,6 +45,23 @@ export interface ProjectDetailDto {
   diagnosis: ProjectFaultDto[];
 }
 
+/** GET /api/v1/projects/{id}/details — detalle completo con datos del dispositivo. */
+export interface ProjectDetailsDto {
+  id: number;
+  projectNumber: number;
+  phoneModel: string;
+  status: ProjectStatusDto;
+  createdAt: string;
+  unlockToolStatus: UnlockToolSupportStatusDto;
+  imageUrl: string | null;
+  salePrice: number | null;
+  saleCurrency: string | null;
+  estimatedProfit: number | null;
+  repairCost: number;
+  repairCurrency: string | null;
+  diagnosis: ProjectFaultDto[];
+}
+
 /** GET/POST /api/v1/projects/{id}/images */
 export interface ProjectImageDto {
   id: number;

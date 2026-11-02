@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { useProyectoDetalle } from '@/hooks/useProyectoDetalle';
 import { EstadoProyecto } from '@/types/proyecto';
-import { verificarSoporteUnlockTool } from '@/data/dispositivosMock';
 import { DetalleIdentificacion } from '@/components/detalle-proyecto/DetalleIdentificacion';
 import { DetalleUnlockToolCard } from '@/components/detalle-proyecto/DetalleUnlockToolCard';
 import { DetalleResumenEconomico } from '@/components/detalle-proyecto/DetalleResumenEconomico';
@@ -40,7 +39,7 @@ export default function DetalleProyectoScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [cambiarEstadoVisible, setCambiarEstadoVisible] = useState(false);
 
-  // Carga del proyecto desde la API (detalle + imágenes en paralelo)
+  // Carga del proyecto desde la API (detalle completo en una sola llamada)
   const { proyecto, cargando, error, refrescar, cambiarEstadoLocal } = useProyectoDetalle(id);
 
   const handleBack = useCallback(() => {
@@ -161,7 +160,6 @@ export default function DetalleProyectoScreen() {
   }
 
   const accion = accionPorEstado[proyecto.estado];
-  const unlockToolSupported = verificarSoporteUnlockTool(proyecto);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -198,7 +196,10 @@ export default function DetalleProyectoScreen() {
         showsVerticalScrollIndicator={false}
       >
         <DetalleIdentificacion proyecto={proyecto} />
-        <DetalleUnlockToolCard supported={unlockToolSupported} />
+        <DetalleUnlockToolCard
+          supported={proyecto.unlockToolSupported}
+          status={proyecto.unlockToolStatus}
+        />
         <DetalleResumenEconomico
           proyecto={proyecto}
           onEditar={() =>

@@ -1,4 +1,4 @@
-import type { ProjectDetailDto, ProjectImageDto, ProjectSummaryDto } from '@/types/api';
+import type { ProjectDetailDto, ProjectDetailsDto, ProjectImageDto, ProjectSummaryDto } from '@/types/api';
 import { API_URL, pedirJson } from './api';
 
 /** Imagen seleccionada en el dispositivo (Expo ImagePicker / FormData). */
@@ -18,21 +18,14 @@ export function obtenerProyecto(id: number): Promise<ProjectDetailDto> {
   return pedirJson<ProjectDetailDto>(`/api/v1/projects/${id}`);
 }
 
+/** GET /api/v1/projects/{id}/details */
+export function obtenerProyectoDetallado(id: number): Promise<ProjectDetailsDto> {
+  return pedirJson<ProjectDetailsDto>(`/api/v1/projects/${id}/details`);
+}
+
 /** GET /api/v1/projects/{id}/images */
 export function obtenerImagenesProyecto(id: number): Promise<ProjectImageDto[]> {
   return pedirJson<ProjectImageDto[]>(`/api/v1/projects/${id}/images`);
-}
-
-/** Detalle + imágenes en paralelo, para pintar la pantalla en una sola pasada. */
-export async function obtenerProyectoCompleto(id: number): Promise<{
-  detalle: ProjectDetailDto;
-  imagenes: ProjectImageDto[];
-}> {
-  const [detalle, imagenes] = await Promise.all([
-    obtenerProyecto(id),
-    obtenerImagenesProyecto(id),
-  ]);
-  return { detalle, imagenes };
 }
 
 /** POST /api/v1/projects/{id}/images (multipart/form-data) */

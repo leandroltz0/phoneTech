@@ -1,6 +1,7 @@
 package com.phoneTech.demo.projects.controller;
 
 import com.phoneTech.demo.projects.dto.ProjectDetailResponse;
+import com.phoneTech.demo.projects.dto.ProjectDetailsResponse;
 import com.phoneTech.demo.projects.dto.ProjectSummaryResponse;
 import com.phoneTech.demo.projects.service.ProjectService;
 import org.springframework.http.ResponseEntity;
@@ -29,5 +30,10 @@ public class ProjectController {
     @GetMapping("/{id}")
     public ResponseEntity<ProjectDetailResponse> getProjectById(@PathVariable Long id) {
         return ResponseEntity.ok(projectService.getProjectById(id));
+    }
+
+    @GetMapping("/{id}/details")
+    public ResponseEntity<ProjectDetailsResponse> getProjectDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(projectService.getProjectDetails(id));
     }
 }

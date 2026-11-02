@@ -2,6 +2,8 @@
  * Tipos del dominio — Proyectos de celulares
  */
 
+import type { UnlockToolSupportStatusDto } from './api';
+
 export type EstadoProyecto = 'evaluacion' | 'reparacion' | 'venta' | 'vendido';
 
 /** Falla diagnosticada de un componente */
@@ -50,4 +52,5 @@ export interface Proyecto {
   fechaCreacion?: string;    // ISO string (opcional: el listado no la trae)
   fechaVenta?: string;       // Solo si estado === 'vendido'
   unlockToolSupported?: boolean;
+  unlockToolStatus?: UnlockToolSupportStatusDto;
 }

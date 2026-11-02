@@ -18,10 +18,9 @@ export const DetalleResumenEconomico = ({ proyecto, onEditar }: Props) => {
   const precioVentaLabel = esVendido ? 'Precio de venta final' : 'Precio de venta estimado';
   const precioVenta = esVendido ? proyecto.precioVentaFinal : proyecto.precioVentaEstimado;
 
-  // Calculamos compra + gastos registrados
-  const compra = proyecto.precioCompra ?? 0;
-  const gastos = proyecto.totalGastos ?? (proyecto.gastos?.reduce((acc, g) => acc + g.monto, 0) ?? 0);
-  const compraYGastos = compra + gastos;
+  const compra = proyecto.precioCompra;
+  const costoReparacion =
+    proyecto.totalGastos ?? (proyecto.gastos?.reduce((acc, g) => acc + g.monto, 0) ?? 0);
 
   return (
     <View style={styles.card}>
@@ -61,15 +60,15 @@ export const DetalleResumenEconomico = ({ proyecto, onEditar }: Props) => {
         </View>
       </View>
 
-      {/* Fila inferior: Compra + gastos registrados */}
+      {/* Fila inferior: costo de reparación */}
       <TouchableOpacity
         style={styles.bottomRow}
         onPress={() => setExpandido(!expandido)}
         activeOpacity={0.7}
       >
         <View style={styles.bottomLeft}>
-          <Text style={styles.bottomLabel}>Compra + gastos registrados</Text>
-          <Text style={styles.bottomValue}>{formatPeso(compraYGastos)}</Text>
+          <Text style={styles.bottomLabel}>Costo de reparación</Text>
+          <Text style={styles.bottomValue}>{formatPeso(costoReparacion)}</Text>
         </View>
         <Ionicons
           name={expandido ? 'chevron-up' : 'chevron-forward'}
@@ -83,14 +82,16 @@ export const DetalleResumenEconomico = ({ proyecto, onEditar }: Props) => {
         <View style={styles.desgloseContainer}>
           <View style={styles.desgloseDivider} />
           
-          <View style={styles.desgloseRow}>
-            <Text style={styles.desgloseLabel}>Precio de compra</Text>
-            <Text style={styles.desgloseValue}>{formatPeso(proyecto.precioCompra)}</Text>
-          </View>
+          {compra !== undefined && (
+            <View style={styles.desgloseRow}>
+              <Text style={styles.desgloseLabel}>Precio de compra</Text>
+              <Text style={styles.desgloseValue}>{formatPeso(compra)}</Text>
+            </View>
+          )}
 
           <View style={styles.desgloseRow}>
-            <Text style={styles.desgloseLabel}>Total gastos repuestos/mano de obra</Text>
-            <Text style={styles.desgloseValue}>{formatPeso(gastos)}</Text>
+            <Text style={styles.desgloseLabel}>Repuestos y reparación</Text>
+            <Text style={styles.desgloseValue}>{formatPeso(costoReparacion)}</Text>
           </View>
 
           {proyecto.gastos && proyecto.gastos.length > 0 && (

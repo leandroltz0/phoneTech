@@ -1,5 +1,5 @@
 import { getIconForComponente } from '@/constants/componentes';
-import type { ProjectDetailDto, ProjectStatusDto, ProjectSummaryDto } from '@/types/api';
+import type { ProjectDetailsDto, ProjectStatusDto, ProjectSummaryDto } from '@/types/api';
 import type { EstadoProyecto, FallaDiagnostico, Proyecto } from '@/types/proyecto';
 import { urlImagen } from './projects';
 
@@ -22,11 +22,8 @@ export function adaptarProyectoResumen(resumen: ProjectSummaryDto): Proyecto {
   };
 }
 
-/** GET /api/v1/projects/{id} + GET .../images → Proyecto completo. */
-export function adaptarProyectoDetalle(
-  detalle: ProjectDetailDto,
-  imagenes: { url: string }[]
-): Proyecto {
+/** GET /api/v1/projects/{id}/details → Proyecto completo. */
+export function adaptarProyectoDetalle(detalle: ProjectDetailsDto): Proyecto {
   const fallas: FallaDiagnostico[] = detalle.diagnosis.map((fallo) => ({
     id: `${fallo.componentCode}-${fallo.faultCode}`,
     componente: fallo.componentName,
@@ -43,11 +40,15 @@ export function adaptarProyectoDetalle(
       detalle.status,
       detalle.estimatedProfit
     ),
-    imagen: imagenes.length > 0 ? urlImagen(imagenes[0].url) : '',
+    imagen: detalle.imageUrl ? urlImagen(detalle.imageUrl) : '',
     diagnostico: fallas.map((f) => `${f.componente} ${f.descripcion}`),
     fallas,
     fechaCreacion: detalle.createdAt,
     gananciaTipo: detalle.status === 'SOLD' ? 'real' : 'estimada',
+    precioVentaEstimado: detalle.salePrice ?? undefined,
+    totalGastos: detalle.repairCost,
+    unlockToolStatus: detalle.unlockToolStatus,
+    unlockToolSupported: detalle.unlockToolStatus === 'SUPPORTED',
   };
 }
 

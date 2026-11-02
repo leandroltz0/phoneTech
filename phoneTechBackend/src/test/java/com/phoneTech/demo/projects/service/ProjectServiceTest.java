@@ -1,11 +1,14 @@
 package com.phoneTech.demo.projects.service;
 
+import com.phoneTech.demo.devices.enums.UnlockToolSupportStatus;
 import com.phoneTech.demo.projects.dto.ProjectDetailResponse;
+import com.phoneTech.demo.projects.dto.ProjectDetailsResponse;
 import com.phoneTech.demo.projects.dto.ProjectSummaryResponse;
 import com.phoneTech.demo.projects.enums.ProjectStatus;
 import com.phoneTech.demo.projects.exception.ProjectNotFoundException;
 import com.phoneTech.demo.projects.repository.ProjectRepository;
 import com.phoneTech.demo.projects.repository.ProjectRepository.ProjectDetailRow;
+import com.phoneTech.demo.projects.repository.ProjectRepository.ProjectDetailsRow;
 import com.phoneTech.demo.projects.repository.ProjectRepository.ProjectSummaryRow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -112,6 +115,91 @@ class ProjectServiceTest {
         assertThatThrownBy(() -> new ProjectService(projectRepository).getProjectById(999L))
                 .isInstanceOf(ProjectNotFoundException.class)
                 .hasMessage("Project not found: 999");
+    }
+
+    @Test
+    void mapsProjectDetailsWithDevicePriceAndRepairCost() {
+        ProjectDetailsRow row = mock(ProjectDetailsRow.class);
+        when(row.getId()).thenReturn(3L);
+        when(row.getProjectNumber()).thenReturn(3L);
+        when(row.getPhoneModel()).thenReturn("Samsung Galaxy A03");
+        when(row.getStatus()).thenReturn(ProjectStatus.PENDING.name());
+        when(row.getCreatedAt()).thenReturn(CREATION_DATE);
+        when(row.getUnlockToolStatus()).thenReturn("SUPPORTED");
+        when(row.getImageUrl()).thenReturn("/uploads/project-photo.jpg");
+        when(row.getSalePrice()).thenReturn(new BigDecimal("150000.00"));
+        when(row.getSaleCurrency()).thenReturn("ARS");
+        when(row.getEstimatedProfit()).thenReturn(new BigDecimal("25000.00"));
+        when(row.getRepairCost()).thenReturn(new BigDecimal("12000.00"));
+        when(row.getRepairCurrency()).thenReturn("ARS");
+        when(row.getFaultId()).thenReturn(9L);
+        stubDetailsFaultFields(row);
+
+        when(projectRepository.findProjectDetails(3L)).thenReturn(List.of(row));
+
+        ProjectDetailsResponse response = new ProjectService(projectRepository).getProjectDetails(3L);
+
+        assertThat(response.id()).isEqualTo(3L);
+        assertThat(response.projectNumber()).isEqualTo(3L);
+        assertThat(response.phoneModel()).isEqualTo("Samsung Galaxy A03");
+        assertThat(response.status()).isEqualTo(ProjectStatus.PENDING);
+        assertThat(response.createdAt()).isEqualTo(CREATION_DATE);
+        assertThat(response.unlockToolStatus()).isEqualTo(UnlockToolSupportStatus.SUPPORTED);
+        assertThat(response.imageUrl()).isEqualTo("/uploads/project-photo.jpg");
+        assertThat(response.salePrice()).isEqualByComparingTo("150000.00");
+        assertThat(response.saleCurrency()).isEqualTo("ARS");
+        assertThat(response.estimatedProfit()).isEqualByComparingTo("25000.00");
+        assertThat(response.repairCost()).isEqualByComparingTo("12000.00");
+        assertThat(response.repairCurrency()).isEqualTo("ARS");
+        assertThat(response.diagnosis()).hasSize(1);
+        assertThat(response.diagnosis().get(0).componentName()).isEqualTo("Módulo");
+        assertThat(response.diagnosis().get(0).faultName()).isEqualTo("Módulo roto");
+        assertThat(response.diagnosis().get(0).confirmed()).isTrue();
+    }
+
+    @Test
+    void returnsNullSalePriceAndUnknownUnlockWhenProjectHasNoDeviceData() {
+        ProjectDetailsRow row = mock(ProjectDetailsRow.class);
+        when(row.getId()).thenReturn(3L);
+        when(row.getProjectNumber()).thenReturn(3L);
+        when(row.getPhoneModel()).thenReturn("Samsung Galaxy A03");
+        when(row.getStatus()).thenReturn(ProjectStatus.PENDING.name());
+        when(row.getCreatedAt()).thenReturn(CREATION_DATE);
+        when(row.getUnlockToolStatus()).thenReturn(null);
+        when(row.getEstimatedProfit()).thenReturn(new BigDecimal("25000.00"));
+        when(row.getRepairCost()).thenReturn(BigDecimal.ZERO);
+        when(row.getFaultId()).thenReturn(null);
+
+        when(projectRepository.findProjectDetails(3L)).thenReturn(List.of(row));
+
+        ProjectDetailsResponse response = new ProjectService(projectRepository).getProjectDetails(3L);
+
+        assertThat(response.unlockToolStatus()).isEqualTo(UnlockToolSupportStatus.UNKNOWN);
+        assertThat(response.salePrice()).isNull();
+        assertThat(response.saleCurrency()).isNull();
+        assertThat(response.imageUrl()).isNull();
+        assertThat(response.repairCost()).isEqualByComparingTo("0");
+        assertThat(response.diagnosis()).isEmpty();
+    }
+
+    @Test
+    void throwsNotFoundWhenProjectDetailsDoNotExist() {
+        when(projectRepository.findProjectDetails(999L)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> new ProjectService(projectRepository).getProjectDetails(999L))
+                .isInstanceOf(ProjectNotFoundException.class)
+                .hasMessage("Project not found: 999");
+    }
+
+    private void stubDetailsFaultFields(ProjectDetailsRow row) {
+        when(row.getComponentCode()).thenReturn("MODULE");
+        when(row.getComponentName()).thenReturn("Módulo");
+        when(row.getFaultCode()).thenReturn("MODULE_BROKEN");
+        when(row.getFaultName()).thenReturn("Módulo roto");
+        when(row.getDescription()).thenReturn("La pantalla del celular está rota o dañada.");
+        when(row.getImageUri()).thenReturn(null);
+        when(row.getConfirmed()).thenReturn(true);
+        when(row.getNotes()).thenReturn(null);
     }
 
     private void stubProjectFields(ProjectDetailRow row, Long projectNumber, String phoneModel,
